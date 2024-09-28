@@ -13,13 +13,19 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hhyyy99.AIPilot",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "需要访问麦克风以进行录音测试"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": ["RECORD_AUDIO"],
+      "package": "com.hhyyy99.AIPilot"
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +37,11 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0849ec87-47f2-45fe-98df-a79270d7f51a"
+      }
     }
   }
 }
