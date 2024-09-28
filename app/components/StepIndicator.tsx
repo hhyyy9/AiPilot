@@ -1,40 +1,29 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { appStore } from '../stores/AppStore';
 
 const StepIndicator = observer(() => {
+  const steps = [1, 2, 3, 4, 5];
+
   const handleStepPress = (step: number) => {
-    if (step < appStore.currentStep) {
-      appStore.setCurrentStep(step);
-    }
+    appStore.setCurrentStep(step);
   };
 
   return (
     <View style={styles.container}>
-      {[1, 2, 3, 4, 5].map((step, index) => (
+      {steps.map((step, index) => (
         <React.Fragment key={step}>
           <TouchableOpacity
+            style={[styles.step, appStore.currentStep >= step && styles.activeStep]}
             onPress={() => handleStepPress(step)}
-            disabled={step > appStore.currentStep}
           >
-            <View style={[
-              styles.step,
-              appStore.currentStep >= step ? styles.activeStep : {}
-            ]}>
-              <Text style={[
-                styles.stepText,
-                appStore.currentStep >= step ? styles.activeStepText : {}
-              ]}>
-                {step}
-              </Text>
-            </View>
+            <Text style={[styles.stepText, appStore.currentStep >= step && styles.activeStepText]}>
+              {step}
+            </Text>
           </TouchableOpacity>
-          {index < 4 && (
-            <View style={[
-              styles.connector,
-              appStore.currentStep > step ? styles.activeConnector : {}
-            ]} />
+          {index < steps.length - 1 && (
+            <View style={[styles.connector, appStore.currentStep > step && styles.activeConnector]} />
           )}
         </React.Fragment>
       ))}
