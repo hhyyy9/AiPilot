@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { Audio } from 'expo-av';
-import * as Permissions from 'expo-permissions';
 import { appStore } from './stores/AppStore';
 import PageLayout from './components/PageLayout';
 
@@ -15,8 +14,11 @@ const Page2 = observer(() => {
 
   useEffect(() => {
     (async () => {
-      const { status } = await Permissions.askAsync(Permissions.AUDIO_RECORDING);
+      console.log('请求音频录制权限...');
+      const { status } = await Audio.requestPermissionsAsync();
+      console.log('音频录制权限状态:', status);
       if (status !== 'granted') {
+        console.warn('未获得音频录制权限');
         Alert.alert('权限不足', '请允许应用访问麦克风以进行录音测试。');
       }
     })();
@@ -166,9 +168,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   recordButton: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     backgroundColor: '#4A90E2',
     justifyContent: 'center',
     alignItems: 'center',
