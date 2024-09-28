@@ -4,13 +4,25 @@ import { observer } from 'mobx-react-lite';
 import { Audio } from 'expo-av';
 import { appStore } from './stores/AppStore';
 import PageLayout from './components/PageLayout';
+import * as FileSystem from 'expo-file-system';
 
 const Page2 = observer(() => {
   const [isRecording, setIsRecording] = useState(false);
-  const [soundLevel, setSoundLevel] = useState(0);
   const [hasTestedMic, setHasTestedMic] = useState(false);
+  const [hasRecordedFile, setHasRecordedFile] = useState(false);
   const recordingRef = useRef<Audio.Recording | null>(null);
   const isRecordingPrepared = useRef(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  const checkPermissions = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('未获得录音权限');
+      return false;
+    }
+    return true;
+  };
 
   useEffect(() => {
     (async () => {
@@ -75,17 +87,16 @@ const Page2 = observer(() => {
       isRecordingPrepared.current = true;
       console.log('录音准备完成');
 
-      console.log('设置录音状态更新回调...');
-      recording.setOnRecordingStatusUpdate(updateSoundLevel);
       console.log('开始录音...');
       await recording.startAsync();
       console.log('录音已开始');
 
       setIsRecording(true);
       setHasTestedMic(true);
-    } catch (err) {
-      console.error('录音失败：', err);
-      Alert.alert('录音失败', '请检查麦克风权限并重试。');
+      setHasRecordedFile(false);
+    } catch (error) {
+      console.error('录音错误:', error);
+      Alert.alert('录音错误', '无法开始录音，请重试。');
     }
   }, []);
 
@@ -94,6 +105,12 @@ const Page2 = observer(() => {
     if (recordingRef.current && isRecordingPrepared.current) {
       try {
         await recordingRef.current.stopAndUnloadAsync();
+        console.log('录音已停止');
+        
+        await checkFileSize();
+        
+        setRecording(recordingRef.current);
+        setHasRecordedFile(true);
       } catch (error) {
         console.error('停止录音时出错：', error);
       }
@@ -101,15 +118,28 @@ const Page2 = observer(() => {
       isRecordingPrepared.current = false;
     }
     setIsRecording(false);
-    setSoundLevel(0);
-    console.log('录音已停止，音量级别重置为0');
   }, []);
 
-  const updateSoundLevel = useCallback((status: Audio.RecordingStatus) => {
-    if (status.isRecording) {
-      const metering = status.metering;
-      console.log('当前音量级别:', metering !== undefined ? metering : 'undefined');
-      setSoundLevel(metering !== undefined ? metering : 0);
+  const checkFileSize = useCallback(async () => {
+    if (recordingRef.current) {
+      const uri = recordingRef.current.getURI();
+      if (uri) {
+        console.log('检查文件大小...');
+        const fileInfo = await FileSystem.getInfoAsync(uri, { size: true });
+        if (fileInfo.exists && 'size' in fileInfo) {
+          console.log('文件大小:', fileInfo.size, '字节');
+          setHasRecordedFile(fileInfo.size > 0);
+        } else {
+          console.warn('文件不存在或无法获取大小信息');
+          setHasRecordedFile(false);
+        }
+      } else {
+        console.warn('无法获取录音文件 URI');
+        setHasRecordedFile(false);
+      }
+    } else {
+      console.warn('没有可用的录音');
+      setHasRecordedFile(false);
     }
   }, []);
 
@@ -129,43 +159,58 @@ const Page2 = observer(() => {
     </TouchableOpacity>
   );
 
+  const playRecording = async () => {
+    if (recording) {
+      try {
+        const { sound } = await recording.createNewLoadedSoundAsync();
+        setSound(sound);
+        await sound.playAsync();
+      } catch (error) {
+        console.error('播放录音时出错：', error);
+        Alert.alert('播放错误', '无法播放录音，请重试。');
+      }
+    }
+  };
+
   return (
     <PageLayout footer={renderFooter()}>
-      <Text style={styles.title}>第 2 页：录音设备测试</Text>
-      <View style={styles.waveformContainer}>
-        <View style={[styles.waveform, { height: `${Math.max(soundLevel * 100, 1)}%` }]} />
-      </View>
-      <TouchableOpacity
-        style={[styles.recordButton, isRecording && styles.recordingButton]}
-        onPressIn={startRecording}
-        onPressOut={stopRecording}
-      >
-        <Text style={styles.recordButtonText}>
-          {isRecording ? '正在录音' : '按住测试麦克风'}
+      <Text style={styles.pageTitle}>第 2 页：录音设备测试</Text>
+      <View style={styles.testContainer}>
+        <TouchableOpacity
+          style={[styles.recordButton, isRecording && styles.recordingButton]}
+          onPressIn={startRecording}
+          onPressOut={stopRecording}
+        >
+          <Text style={styles.recordButtonText}>
+            {isRecording ? '正在录音' : '按住测试麦克风'}
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.instruction}>
+          {hasTestedMic ? '麦克风测试完成' : '请按住按钮进行麦克风测试'}
         </Text>
-      </TouchableOpacity>
-      <Text style={styles.instruction}>
-        {hasTestedMic ? '麦克风测试完成' : '请按住按钮进行麦克风测试'}
-      </Text>
+        {hasRecordedFile && (
+          <TouchableOpacity style={styles.playButton} onPress={playRecording}>
+            <Text style={styles.playButtonText}>播放录音</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </PageLayout>
   );
 });
 
 const styles = StyleSheet.create({
-  title: {
+  pageTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-  },
-  waveformContainer: {
-    height: 100,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'flex-end',
-    marginBottom: 20,
-  },
-  waveform: {
-    backgroundColor: '#4A90E2',
+    textAlign: 'left',
+    alignSelf: 'flex-start',
     width: '100%',
+  },
+  testContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   recordButton: {
     width: 150,
@@ -174,8 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A90E2',
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
   },
   recordingButton: {
     backgroundColor: '#FF4136',
@@ -184,11 +228,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   instruction: {
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 20,
+  },
+  playButton: {
+    backgroundColor: '#32CD32',
+    padding: 15,
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  playButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   button: {
     width: '100%',

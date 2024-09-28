@@ -7,7 +7,7 @@
         "./*"
       ]
     },
-    "types": ["react-native", "expo"]
+    "types": ["react-native", "expo", "node"]
   },
   "include": [
     "**/*.ts",
