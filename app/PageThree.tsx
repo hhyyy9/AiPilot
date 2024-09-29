@@ -5,21 +5,21 @@ import { appStore } from './stores/AppStore';
 import PageLayout from './components/PageLayout';
 
 const LANGUAGE_MAP = {
-  'af': 'Afrikaans', 'ar': 'العربية', 'hy': 'Հայերեն', 'az': 'Azərbaycan',
-  'be': 'Беларуская', 'bs': 'Bosanski', 'bg': 'Български', 'ca': 'Català',
-  'zh': '中文', 'hr': 'Hrvatski', 'cs': 'Čeština', 'da': 'Dansk',
-  'nl': 'Nederlands', 'en': 'English', 'et': 'Eesti', 'fi': 'Suomi',
-  'fr': 'Français', 'gl': 'Galego', 'de': 'Deutsch', 'el': 'Ελληνικά',
-  'he': 'עברית', 'hi': 'हिन्दी', 'hu': 'Magyar', 'is': 'Íslenska',
-  'id': 'Bahasa Indonesia', 'it': 'Italiano', 'ja': '日本語', 'kn': 'ಕನ್ನಡ',
-  'kk': 'Қазақ', 'ko': '한국어', 'lv': 'Latviešu', 'lt': 'Lietuvių',
-  'mk': 'Македонски', 'ms': 'Bahasa Melayu', 'mr': 'मराठी', 'mi': 'Māori',
-  'ne': 'नेपाली', 'no': 'Norsk', 'fa': 'فارسی', 'pl': 'Polski',
-  'pt': 'Português', 'ro': 'Română', 'ru': 'Русский', 'sr': 'Српски',
-  'sk': 'Slovenčina', 'sl': 'Slovenščina', 'es': 'Español', 'sw': 'Kiswahili',
-  'sv': 'Svenska', 'tl': 'Tagalog', 'ta': 'தமிழ்', 'th': 'ไทย',
-  'tr': 'Türkçe', 'uk': 'Українська', 'ur': 'اردو', 'vi': 'Tiếng Việt',
-  'cy': 'Cymraeg'
+  'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語',
+  'fr': 'Français', 'de': 'Deutsch', 'pt': 'Português', 'ru': 'Русский',
+  'ar': 'العربية', 'hi': 'हिन्दी', 'ko': '한국어',
+  'af': 'Afrikaans', 'az': 'Azərbaycan', 'be': 'Беларуская', 'bg': 'Български',
+  'bs': 'Bosanski', 'ca': 'Català', 'cs': 'Čeština', 'cy': 'Cymraeg',
+  'da': 'Dansk', 'el': 'Ελληνικά', 'et': 'Eesti', 'fa': 'فارسی',
+  'fi': 'Suomi', 'gl': 'Galego', 'he': 'עברית', 'hr': 'Hrvatski',
+  'hu': 'Magyar', 'hy': 'Հայերեն', 'id': 'Bahasa Indonesia', 'is': 'Íslenska',
+  'it': 'Italiano', 'kk': 'Қазақ', 'kn': 'ಕನ್ನಡ', 'lt': 'Lietuvių',
+  'lv': 'Latviešu', 'mi': 'Māori', 'mk': 'Македонски', 'mr': 'मराठी',
+  'ms': 'Bahasa Melayu', 'ne': 'नेपाली', 'nl': 'Nederlands', 'no': 'Norsk',
+  'pl': 'Polski', 'ro': 'Română', 'sk': 'Slovenčina', 'sl': 'Slovenščina',
+  'sr': 'Српски', 'sv': 'Svenska', 'sw': 'Kiswahili', 'ta': 'தமிழ்',
+  'th': 'ไทย', 'tl': 'Tagalog', 'tr': 'Türkçe', 'uk': 'Українська',
+  'ur': 'اردو', 'vi': 'Tiếng Việt'
 };
 
 const Page3 = observer(() => {
