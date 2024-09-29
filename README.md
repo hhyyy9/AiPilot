@@ -48,3 +48,21 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+
+
+/Users/jackyhuang/Projects/WebProjects/AiPilot/node_modules/react-native-screens/RNScreens.podspec 
+  # s.project_header_files = "cpp/**/*.h" # Don't expose C++ headers publicly to allow importing framework into Swift files
+  s.private_header_files = "cpp/**/*.h"
+
+/Users/jackyhuang/Projects/WebProjects/AiPilot/node_modules/react-native/ReactCommon/yoga/Yoga.podspec
+  #spec.version = '0.0.0'
+  spec.version = '1.40.0'
+
+/Users/jackyhuang/Projects/WebProjects/AiPilot/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
+  ss.visionos.vendored_frameworks = "destroot/Library/Frameworks/universal/hermes.xcframework"
+  #ss.visionos.vendored_frameworks = "destroot/Library/Frameworks/universal/hermes.xcframework"
+
+
+
+https://docs.expo.dev/develop/development-builds/create-a-build/

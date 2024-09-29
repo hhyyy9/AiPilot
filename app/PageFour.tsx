@@ -151,7 +151,7 @@ const Page4 = observer(() => {
     }
   };
 
-  const generateResponse = async (prompt: string) => {
+  const generateResponse = async (jobPositon: string, prompt: string) => {
     const language = LANGUAGE_MAP[appStore.language] || "English";
 
     try {
@@ -164,7 +164,7 @@ const Page4 = observer(() => {
           },
           {
             role: "user",
-            content: `Resume content:\n\n${resumeContent}\n\nRemember this information for your responses.`,
+            content: `Job Position: ${jobPositon}\n\nResume content:\n\n${resumeContent}\n\nRemember this information for your responses.`,
           },
           {
             role: "assistant",
@@ -198,6 +198,7 @@ const Page4 = observer(() => {
     if (recording) {
       recording.stopAndUnloadAsync();
       setRecording(null);
+      isRecording = false;
       console.log("录音已停止");
     }
 
@@ -377,7 +378,7 @@ const Page4 = observer(() => {
       const text = transcription.text;
 
       // 生成回答
-      const answer = await generateResponse(text);
+      const answer = await generateResponse(appStore.position, text);
       if (answer) {
         console.log("AI回答:", answer);
         await addNewQAPair(text, answer, 1);

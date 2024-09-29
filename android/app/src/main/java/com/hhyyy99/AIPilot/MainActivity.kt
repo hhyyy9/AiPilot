@@ -1,4 +1,4 @@
-package com.aipilot
+package com.hhyyy99.AIPilot
 
 import android.os.Build
 import android.os.Bundle
