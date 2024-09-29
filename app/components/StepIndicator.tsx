@@ -4,10 +4,12 @@ import { observer } from 'mobx-react-lite';
 import { appStore } from '../stores/AppStore';
 
 const StepIndicator = observer(() => {
-  const steps = [1, 2, 3, 4, 5];
+  const steps = [1, 2, 3, 4]; // 改为只有4个步骤
 
   const handleStepPress = (step: number) => {
-    appStore.setCurrentStep(step);
+    if (step <= appStore.currentStep) {
+      appStore.setCurrentStep(step);
+    }
   };
 
   return (
@@ -34,36 +36,34 @@ const StepIndicator = observer(() => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#f0f0f0',
   },
   step: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E0E0E0',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#d0d0d0',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
   },
   activeStep: {
     backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
   },
   stepText: {
-    color: '#757575',
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
   },
   activeStepText: {
-    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
   connector: {
-    width: 30,
+    flex: 1,
     height: 2,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#d0d0d0',
     marginHorizontal: 5,
   },
   activeConnector: {

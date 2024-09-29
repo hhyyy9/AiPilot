@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PageLayout from './components/PageLayout';
 import StepIndicator from './components/StepIndicator'; // 确保导入 StepIndicator
+import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 // 定义 ResumeFile 类型
 type ResumeFile = {
   uri: string;
@@ -39,44 +41,61 @@ const Page1 = observer(() => {
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: [
-          'application/pdf',
-          'application/msword',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'text/plain',
-          'application/rtf'
-        ],
+        type: 'text/plain',
       });
 
       if (result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         const currentDate = new Date();
         const dateSuffix = `_${currentDate.getFullYear()}${(currentDate.getMonth() + 1).toString().padStart(2, '0')}${currentDate.getDate().toString().padStart(2, '0')}`;
-        const savedName = `${file.name.split('.').slice(0, -1).join('.')}${dateSuffix}.${file.name.split('.').pop()}`;
+        const savedName = `${file.name.split('.').slice(0, -1).join('.')}${dateSuffix}.txt`;
         
+        let newUri;
+        if (Platform.OS === 'web') {
+          // Web 平台特殊处理
+          newUri = file.uri; // Web 平台直接使用原始 URI
+        } else {
+          // 移动平台保持原有逻辑
+          newUri = FileSystem.documentDirectory + savedName;
+          await FileSystem.copyAsync({
+            from: file.uri,
+            to: newUri
+          });
+        }
+
         const newResumeFile = {
-          uri: file.uri,
+          uri: newUri,
           name: file.name,
-          mimeType: file.mimeType || 'application/octet-stream',
+          mimeType: 'text/plain',
           savedName: savedName,
         };
 
         setResumeFile(newResumeFile);
-
-        // 保存到本地存储
         await AsyncStorage.setItem('resumeFile', JSON.stringify(newResumeFile));
+        appStore.setResumeFile(newResumeFile);
+
+        console.log('存储的简历文件路径:', newUri);
+        console.log('完整的简历文件对象:', newResumeFile);
       }
-    } catch (err) {
-      console.error('文件选择错误:', err);
+    } catch (error) {
+      console.error('文件选择错误:', error);
     }
   };
 
   const handleNextStep = () => {
+    console.log('handleNextStep called');
+    console.log('Current position:', position);
+    console.log('Current resumeFile:', resumeFile);
+
     if (position && resumeFile) {
+      console.log('Conditions met, proceeding to next step');
       appStore.setPosition(position);
       appStore.setResumeFile(resumeFile);
       appStore.nextStep();
+      console.log('Current step after nextStep:', appStore.currentStep);
+      
     } else {
+      console.log('Conditions not met');
       alert('请填写职位并上传简历');
     }
   };
@@ -98,12 +117,13 @@ const Page1 = observer(() => {
       />
       <TouchableOpacity style={styles.button} onPress={pickDocument}>
         <Text style={styles.buttonText}>
-          {resumeFile ? '更新简历' : '上传简历 (支持 PDF, Word, TXT)'}
+          {resumeFile ? '更新简历' : '上传简历 (仅支持 TXT 文件)'}
         </Text>
       </TouchableOpacity>
       {resumeFile && (
         <Text style={styles.fileName}>已选择文件: {resumeFile.savedName || resumeFile.name}</Text>
       )}
+      <Text style={styles.note}>注意：只支持上传 TXT 文本文件</Text>
     </PageLayout>
   );
 });
@@ -163,6 +183,11 @@ const styles = StyleSheet.create({
   fileName: {
     marginTop: 10,
     fontSize: 16,
+  },
+  note: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
   },
 });
 

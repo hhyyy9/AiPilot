@@ -7,12 +7,14 @@
         "./*"
       ]
     },
-    "types": ["react-native", "expo", "node"]
+    "types": ["react-native", "expo", "node", "react-native-dotenv"],
+    "typeRoots": ["./node_modules/@types", "./env.d.ts"]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "env.d.ts"
   ]
 }

@@ -6,7 +6,6 @@ import Page1 from './PageOne';
 import Page2 from './PageTwo';
 import Page3 from './PageThree';
 import Page4 from './PageFour';
-import Page5 from './PageFive';
 import StepIndicator from './components/StepIndicator';
 
 const App = observer(() => {
@@ -20,8 +19,6 @@ const App = observer(() => {
         return <Page3 />;
       case 4:
         return <Page4 />;
-      case 5:
-        return <Page5 />;
       default:
         return <Page1 />;
     }

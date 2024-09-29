@@ -39,3 +39,10 @@ allprojects {
         maven { url 'https://www.jitpack.io' }
     }
 }
+
+android {
+
+    dexOptions {
+        jumboMode true
+    }
+}

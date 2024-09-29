@@ -10,12 +10,16 @@ class AppStore {
     makeAutoObservable(this);
   }
 
-  nextStep() {
-    this.currentStep += 1;
+  setCurrentStep(step: number) {
+    if (step >= 1 && step <= 4) {
+      this.currentStep = step;
+    }
   }
 
-  setCurrentStep(step: number) {
-    this.currentStep = step;
+  nextStep() {
+    if (this.currentStep < 4) {
+      this.currentStep += 1;
+    }
   }
 
   setPosition(position: string) {
@@ -28,6 +32,14 @@ class AppStore {
 
   setLanguage(language: string) {
     this.language = language;
+  }
+
+  resetState() {
+    // 重置所有相关状态
+    this.currentStep = 1;
+    this.resumeFile = null;
+    this.language = 'en';
+    // ... 重置其他需要重置的状态 ...
   }
 }
 
