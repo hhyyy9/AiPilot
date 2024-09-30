@@ -5,6 +5,8 @@ class AppStore {
   position: string = '';
   resumeFile: any = null;
   language: string = 'en';
+  recordingLanguage: string = 'en-US';
+  currentTranscription: string = '';
 
   constructor() {
     makeAutoObservable(this);
@@ -34,12 +36,32 @@ class AppStore {
     this.language = language;
   }
 
+  setRecordingLanguage(language: string) {
+    this.recordingLanguage = language;
+  }
+
+  setCurrentTranscription(text: string) {
+    this.currentTranscription = text;
+  }
+
+  appendToCurrentTranscription(text: string) {
+    this.currentTranscription += ' ' + text;
+    this.currentTranscription = this.currentTranscription.trim();
+  }
+
+  clearCurrentTranscription() {
+    this.currentTranscription = '';
+  }
+
   resetState() {
     // 重置所有相关状态
     this.currentStep = 1;
     this.resumeFile = null;
     this.language = 'en';
-    // ... 重置其他需要重置的状态 ...
+    this.currentTranscription = '';
+    this.position = '';
+    this.recordingLanguage = 'en-US';
+    // ...  ...
   }
 }
 

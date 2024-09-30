@@ -5,6 +5,8 @@ import { Audio } from 'expo-av';
 import { appStore } from './stores/AppStore';
 import PageLayout from './components/PageLayout';
 import * as FileSystem from 'expo-file-system';
+import { Picker } from "@react-native-picker/picker";
+import DropDownPicker from 'react-native-dropdown-picker';
 
 const Page2 = observer(() => {
   const [isRecording, setIsRecording] = useState(false);
@@ -14,6 +16,15 @@ const Page2 = observer(() => {
   const isRecordingPrepared = useRef(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  const [open, setOpen] = useState(false);
+
+
+  const languageOptions = [
+    { label: "英语", value: "en-US" },
+    { label: "中文", value: "zh-CN" },
+    { label: "日语", value: "ja-JP" },
+  ];
 
   const checkPermissions = async () => {
     const { status } = await Audio.requestPermissionsAsync();
@@ -106,9 +117,9 @@ const Page2 = observer(() => {
       try {
         await recordingRef.current.stopAndUnloadAsync();
         console.log('录音已停止');
-        
+
         await checkFileSize();
-        
+
         setRecording(recordingRef.current);
         setHasRecordedFile(true);
       } catch (error) {
@@ -175,6 +186,34 @@ const Page2 = observer(() => {
   return (
     <PageLayout footer={renderFooter()}>
       <Text style={styles.pageTitle}>第 2 页：录音设备测试</Text>
+      <View style={styles.pickerContainer}>
+        <Text style={styles.label}>选择录音语言：</Text>
+        {/* <Picker
+          selectedValue={appStore.recordingLanguage}
+          onValueChange={(itemValue) => appStore.setRecordingLanguage(itemValue)}
+          style={styles.picker}
+        >
+          {languageOptions.map((option) => (
+            <Picker.Item key={option.value} label={option.label} value={option.value} />
+          ))}
+        </Picker> */}
+        <DropDownPicker
+          open={open}
+          value={appStore.recordingLanguage}
+          items={languageOptions}
+          setOpen={setOpen}
+          setValue={(callback) => {
+            if (typeof callback === 'function') {
+              const value = callback(appStore.recordingLanguage);
+              appStore.setRecordingLanguage(value);
+            } else {
+              appStore.setRecordingLanguage(callback);
+            }
+          }}
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownContainer}
+        />
+      </View>
       <View style={styles.testContainer}>
         <TouchableOpacity
           style={[styles.recordButton, isRecording && styles.recordingButton]}
@@ -258,6 +297,24 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  label: {
+    fontSize: 16,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  // picker: {
+  //   width: "100%",
+  //   height: 50,
+  // },
+  pickerContainer: {
+    marginBottom: 20,
+  },
+  dropdown: {
+    marginBottom: 20,
+  },
+  dropdownContainer: {
+    borderColor: '#ccc',
   },
 });
 

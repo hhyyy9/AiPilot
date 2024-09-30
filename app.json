@@ -35,7 +35,19 @@
     "plugins": [
       "expo-router",
       "expo-av",
-      "expo-document-picker"
+      "expo-document-picker",
+      [
+      "expo-speech-recognition",
+      {
+        "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone.",
+        "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to use speech recognition.",
+        // Add additional speech service packages here that aren't listed
+        // under the `forceQueryable` section when running the command:
+        // "adb shell dumpsys package queries"
+        // default: ["com.google.android.googlequicksearchbox"]
+        "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+      }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

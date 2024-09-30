@@ -66,3 +66,21 @@ Join our community of developers creating universal apps.
 
 
 https://docs.expo.dev/develop/development-builds/create-a-build/
+
+https://github.com/jamsch/expo-speech-recognition?tab=readme-ov-file
+
+
+npx expo-cli clean
+
+rm -rf node_modules
+npm install
+
+cd ios
+pod deintegrate
+pod install
+cd ..
+
+npx expo run:ios
+npx expo run:android
+
+npx expo-cli doctor
