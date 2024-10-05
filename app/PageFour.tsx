@@ -14,7 +14,7 @@ import * as FileSystem from "expo-file-system";
 import OpenAI from 'openai';
 import {
   ExpoSpeechRecognitionModule,
-  addSpeechRecognitionListener,
+  useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
 
 const OPENAI_API_KEY =
@@ -86,18 +86,6 @@ const LANGUAGE_MAP: { [key: string]: string } = {
   cy: "Cymraeg",
 };
 
-  // 定义监听器的类型
-  type Listener = {
-    remove: () => void;
-  } | null;
-
-  type Listeners = {
-    startListener: Listener;
-    endListener: Listener;
-    resultListener: Listener;
-    errorListener: Listener;
-  };
-
 const Page4 = observer(() => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [interviewContent, setInterviewContent] = useState<string[]>([]);
@@ -110,60 +98,43 @@ const Page4 = observer(() => {
     transcript: "",
   });
 
-  const listenersRef = useRef<Listeners>({
-    startListener: null,
-    endListener: null,
-    resultListener: null,
-    errorListener: null
-  });
-
-  useEffect(() => {
-    isInterviewingRef.current = isInterviewing;
-  }, [isInterviewing]);
-
-  useEffect(() => {
-
-    listenersRef.current.startListener = addSpeechRecognitionListener("start", () => {
-      console.log("Speech recognition started");
-    });
-  
-    listenersRef.current.endListener = addSpeechRecognitionListener("end", (event) => {
-      console.log("Speech recognition ended",event);
-    });
-  
-    listenersRef.current.resultListener = addSpeechRecognitionListener("result", (ev) => {
-      console.log('onSpeechResults: ', ev);
-      if(!isInterviewingRef.current){
-        return;
-      }
-      
-      if (ev.isFinal) {
-        const finalTranscript = ev.results[0]?.transcript || "";
-        console.log('最终识别结果: ', finalTranscript);
-        
-        setTranscription((current) => ({
-          transcriptTally: (current.transcriptTally ?? "") + finalTranscript,
-          transcript: (current.transcriptTally ?? "") + finalTranscript,
-        }));
-        
-        handleSpeechEnd(finalTranscript);
-      }
-    });
-  
-    listenersRef.current.errorListener = addSpeechRecognitionListener("error", (event) => {
-      console.log("error code:", event.error, "error message:", event.message);
-      if (event.error === 'no-speech' && isInterviewingRef.current) {
-        console.log("No speech detected, restarting recognition...");
-      }
-      handleStart();
-    });
-  
-    return () => {
-      Object.values(listenersRef.current).forEach(listener => listener?.remove());
-    };
+  const updateIsInterviewing = useCallback((value: boolean) => {
+    setIsInterviewing(value);
+    isInterviewingRef.current = value;
+    console.log(`isInterviewing 更新为: ${value}`);
   }, []);
 
-  
+  useSpeechRecognitionEvent("start", () => {
+    console.log("Speech recognition started", isInterviewingRef.current);
+  });
+
+  useSpeechRecognitionEvent("end", (event) => {
+    console.log("Speech recognition ended", event, isInterviewingRef.current);
+  });
+
+  useSpeechRecognitionEvent("result", (event) => {
+    console.log("onSpeechResults: ", event, isInterviewingRef.current);
+    if (!isInterviewingRef.current) return;
+
+    const transcriptResult = event.results[0]?.transcript || "";
+    setTranscription((prev) => ({
+      transcriptTally: prev.transcriptTally + " " + transcriptResult,
+      transcript: transcriptResult,
+    }));
+
+    if (event.isFinal) {
+      console.log('最终识别结果: ', transcriptResult);
+      handleSpeechEnd(transcriptResult);
+    }
+  });
+
+  useSpeechRecognitionEvent("error", (event) => {
+    console.log("Speech recognition error:", event.error, event.message);
+    if (event.error === 'no-speech' && isInterviewingRef.current) {
+      console.log("No speech detected, restarting recognition...");
+      // handleStart();
+    }
+  });
 
   const handleSpeechEnd = async (finalTranscription: string) => {
     console.log('开始处理文字转语音', finalTranscription);
@@ -191,7 +162,7 @@ const Page4 = observer(() => {
         Alert.alert("错误", "无法生成回答，请重试。");
         if (isInterviewingRef.current) {
           // isRecognizingRef.current = true;
-          handleStart();
+          await handleStart();
         }
       }
     }
@@ -221,36 +192,17 @@ const Page4 = observer(() => {
       // 音频播放完成后，如果面试仍在进行，则开始新的录音
       if (isInterviewingRef.current) {
         console.log("准备开始下一次语音识别");
+        await handleStart();
+      }else{
+        return;
       }
     } catch (error) {
-      console.error("播放音频��误:", error);
+      console.error("播放音频误:", error);
       Alert.alert("错误", "播放音频时出现错误，请重试。");
       if (isInterviewingRef.current) {
         console.log("播放出错，但仍准备开始新的语音识别");
+        await handleStart();
       }
-    }
-    handleStart();
-  };
-
-  const startInterview = () => {
-    try {
-      console.log("开始面试流程...");
-      isInterviewingRef.current = true;
-      console.log("面试开始成功");
-    } catch (error) {
-      console.error("开始面试时出错:", error);
-      isInterviewingRef.current = false;
-      Alert.alert("错误", "开始面试时出现问题，请重试。");
-    }
-  };
-
-  const stopInterview = () => {
-    try {
-      setIsInterviewing(false);
-      isInterviewingRef.current = false;
-    } catch (error) {
-      console.error("停止面试时出错:", error);
-      throw error;
     }
   };
 
@@ -264,42 +216,36 @@ const Page4 = observer(() => {
   }, [interviewContent]);
 
   const handleStart = async () => {
-    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!result.granted) {
-      console.warn("Permissions not granted", result);
-      return;
+    try {
+      const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!result.granted) {
+        console.warn("Permissions not granted", result);
+        return;
+      }
+      console.log("更新isInterviewing为true1", isInterviewingRef.current);
+      updateIsInterviewing(true);
+      console.log("更新isInterviewing为true2", isInterviewingRef.current);
+      await ExpoSpeechRecognitionModule.start({
+        lang: "zh-CN",
+        interimResults: true,
+        maxAlternatives: 1,
+        continuous: false,
+      });
+      console.log("语音识别已启动", isInterviewingRef.current);
+    } catch (error) {
+      console.error("启动语音识别时出错:", error);
     }
-    isInterviewingRef.current = true;
-    setIsInterviewing(prev => {
-      console.log("强制更新 isInterviewing:", !prev);
-      return !prev;
-    });
-    // Start speech recognition
-    ExpoSpeechRecognitionModule.start({
-      lang: appStore.recordingLanguage,
-      interimResults: true,
-      maxAlternatives: 1,
-      continuous: false,
-      requiresOnDeviceRecognition: false,
-      addsPunctuation: false,
-      contextualStrings: ["Carlsen", "Nepomniachtchi", "Praggnanandhaa"],
-    });
   };
 
   const handleStop = async () => {
-    // Stop speech recognition
-    // 移除所有监听器
-    Object.values(listenersRef.current).forEach(listener => listener?.remove());
-    isInterviewingRef.current = false;
-    setIsInterviewing(prev => {
-      console.log("强制更新 isInterviewing:", !prev);
-      return !prev;
-    });
-
-
-    ExpoSpeechRecognitionModule.stop();
+    try {
+      await ExpoSpeechRecognitionModule.stop();
+      updateIsInterviewing(false);
+      console.log("语音识别已停止");
+    } catch (error) {
+      console.error("停止语音识别时出错:", error);
+    }
   };
-
 
   const loadResumeContent = () => {
     try {
@@ -383,23 +329,22 @@ const Page4 = observer(() => {
   };
 
   const handleStartButtonPress = async () => {
+    console.log("按钮被点击，当前状态:", isInterviewingRef.current);
     try {
-      console.log("按钮被点击，当前状态:", isInterviewingRef.current);
-
       if (isInterviewingRef.current) {
-        stopInterview();
-        await handleStop();
         console.log("尝试结束面试");
+        await handleStop();
       } else {
-        await handleStart();
-        startInterview();
         console.log("尝试开始面试");
+        console.log("更新isInterviewing为true1", isInterviewingRef.current);
+        updateIsInterviewing(true);
+        console.log("更新isInterviewing为true2", isInterviewingRef.current);
+        await handleStart();
         await addNewQAPair("开始面试...", "", 0);
       }
     } catch (error) {
       console.error("处理按钮点击时出错:", error);
       await handleStop();
-      stopInterview();
       Alert.alert("错误", "处理面试状态时出现问题，请重试。");
     }
   };
@@ -425,12 +370,12 @@ const Page4 = observer(() => {
     <TouchableOpacity
       style={[
         styles.button,
-        isInterviewingRef.current && styles.activeButton,
+        isInterviewing && styles.activeButton,
       ]}
       onPress={handleStartButtonPress}
     >
       <Text style={styles.buttonText}>
-        {isInterviewingRef.current ? "结束面试" : "开始面试"}
+        {isInterviewing ? "结束面试" : "开始面试"}
       </Text>
     </TouchableOpacity>
   );
