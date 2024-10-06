@@ -9,6 +9,7 @@ import PageLayout from './components/PageLayout';
 import StepIndicator from './components/StepIndicator'; // 确保导入 StepIndicator
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
+import { Alert } from 'react-native'; // Added import for Alert
 // 定义 ResumeFile 类型
 type ResumeFile = {
   uri: string;
@@ -16,6 +17,8 @@ type ResumeFile = {
   mimeType: string;
   savedName?: string;
 } | null;
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
 const Page1 = observer(() => {
   const [position, setPosition] = useState('');
@@ -46,16 +49,22 @@ const Page1 = observer(() => {
 
       if (result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        
+        // 检查文件大小
+        const fileInfo = await FileSystem.getInfoAsync(file.uri, { size: true });
+        if ('size' in fileInfo && fileInfo.size > MAX_FILE_SIZE) {
+          Alert.alert("文件过大", "请选择小于 ${MAX_FILE_SIZE / (1024 * 1024)}MB 的文件。");
+          return;
+        }
+
         const currentDate = new Date();
         const dateSuffix = `_${currentDate.getFullYear()}${(currentDate.getMonth() + 1).toString().padStart(2, '0')}${currentDate.getDate().toString().padStart(2, '0')}`;
         const savedName = `${file.name.split('.').slice(0, -1).join('.')}${dateSuffix}.txt`;
         
         let newUri;
         if (Platform.OS === 'web') {
-          // Web 平台特殊处理
           newUri = file.uri; // Web 平台直接使用原始 URI
         } else {
-          // 移动平台保持原有逻辑
           newUri = FileSystem.documentDirectory + savedName;
           await FileSystem.copyAsync({
             from: file.uri,
@@ -79,6 +88,7 @@ const Page1 = observer(() => {
       }
     } catch (error) {
       console.error('文件选择错误:', error);
+      Alert.alert("错误", "选择文件时发生错误。");
     }
   };
 
@@ -108,7 +118,7 @@ const Page1 = observer(() => {
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Text style={styles.title}>第 1 页：职位信息</Text>
+      <Text style={styles.title}>填写应聘的职位信息</Text>
       <TextInput
         style={styles.input}
         placeholder="请输入面试职位"

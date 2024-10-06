@@ -1,12 +1,28 @@
 import { makeAutoObservable } from 'mobx';
 
+
+export const LANGUAGE_MAP: { [key: string]: { name: string, code: string } } = {
+  'en': { name: 'English', code: 'en-US' },
+  'zh': { name: '中文', code: 'zh-CN' },
+  'es': { name: 'Español', code: 'es-ES' },
+  'ja': { name: '日本語', code: 'ja-JP' },
+  'ko': { name: '한국어', code: 'ko-KR' },
+  'fr': { name: 'Français', code: 'fr-FR' },
+  'de': { name: 'Deutsch', code: 'de-DE' },
+  'pt': { name: 'Português', code: 'pt-PT' },
+  'ru': { name: 'Русский', code: 'ru-RU' },
+  'ar': { name: 'العربية', code: 'ar-SA' },
+  'hi': { name: 'हिन्दी', code: 'hi-IN' }
+};
+
 class AppStore {
   currentStep: number = 1;
   position: string = '';
   resumeFile: any = null;
-  language: string = 'en';
+  language: string = 'English';
   recordingLanguage: string = 'en-US';
   currentTranscription: string = '';
+  
 
   constructor() {
     makeAutoObservable(this);
@@ -61,7 +77,6 @@ class AppStore {
     this.currentTranscription = '';
     this.position = '';
     this.recordingLanguage = 'en-US';
-    // ...  ...
   }
 }
 

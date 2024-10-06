@@ -1,29 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { appStore } from './stores/AppStore';
+import { appStore, LANGUAGE_MAP } from './stores/AppStore';
 import PageLayout from './components/PageLayout';
 
-const LANGUAGE_MAP = {
-  'en': 'English', 'zh': '中文', 'es': 'Español', 'ja': '日本語',
-  'fr': 'Français', 'de': 'Deutsch', 'pt': 'Português', 'ru': 'Русский',
-  'ar': 'العربية', 'hi': 'हिन्दी', 'ko': '한국어',
-  'af': 'Afrikaans', 'az': 'Azərbaycan', 'be': 'Беларуская', 'bg': 'Български',
-  'bs': 'Bosanski', 'ca': 'Català', 'cs': 'Čeština', 'cy': 'Cymraeg',
-  'da': 'Dansk', 'el': 'Ελληνικά', 'et': 'Eesti', 'fa': 'فارسی',
-  'fi': 'Suomi', 'gl': 'Galego', 'he': 'עברית', 'hr': 'Hrvatski',
-  'hu': 'Magyar', 'hy': 'Հայերեն', 'id': 'Bahasa Indonesia', 'is': 'Íslenska',
-  'it': 'Italiano', 'kk': 'Қазақ', 'kn': 'ಕನ್ನಡ', 'lt': 'Lietuvių',
-  'lv': 'Latviešu', 'mi': 'Māori', 'mk': 'Македонски', 'mr': 'मराठी',
-  'ms': 'Bahasa Melayu', 'ne': 'नेपाली', 'nl': 'Nederlands', 'no': 'Norsk',
-  'pl': 'Polski', 'ro': 'Română', 'sk': 'Slovenčina', 'sl': 'Slovenščina',
-  'sr': 'Српски', 'sv': 'Svenska', 'sw': 'Kiswahili', 'ta': 'தமிழ்',
-  'th': 'ไทย', 'tl': 'Tagalog', 'tr': 'Türkçe', 'uk': 'Українська',
-  'ur': 'اردو', 'vi': 'Tiếng Việt'
-};
+
 
 const Page3 = observer(() => {
-  const [selectedLanguage, setSelectedLanguage] = useState(appStore.language || 'en');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -41,8 +25,12 @@ const Page3 = observer(() => {
   }, []);
 
   const handleLanguageSelect = (langCode: string) => {
+    console.log('handleLanguageSelect', langCode);
     setSelectedLanguage(langCode);
-    appStore.setLanguage(langCode);
+    appStore.setLanguage(LANGUAGE_MAP[langCode].name);
+    // 设置 recordingLanguage
+    const selectedRecordingLanguageCode = LANGUAGE_MAP[langCode].code;
+    appStore.setRecordingLanguage(selectedRecordingLanguageCode);
   };
 
   const handleNextStep = () => {
@@ -59,11 +47,25 @@ const Page3 = observer(() => {
     </TouchableOpacity>
   );
 
+  const handleLanguageChange = () => {
+    const languageKeys = Object.keys(LANGUAGE_MAP);
+    const currentIndex = languageKeys.indexOf(appStore.language);
+    const englishIndex = languageKeys.indexOf('en');
+    
+    let nextIndex = (currentIndex + 1) % languageKeys.length;
+    if (nextIndex === englishIndex) {
+      nextIndex = (nextIndex + 1) % languageKeys.length;
+    }
+    
+    const nextLanguage = languageKeys[nextIndex];
+    appStore.setLanguage(nextLanguage);
+  };
+
   return (
     <PageLayout footer={renderFooter()}>
-      <Text style={styles.pageTitle}>第 3 页：播放语言设置</Text>
+      <Text style={styles.pageTitle}>设置面试语言</Text>
       <ScrollView ref={scrollViewRef} style={styles.languageContainer}>
-        {Object.entries(LANGUAGE_MAP).map(([code, name]) => (
+        {Object.entries(LANGUAGE_MAP).map(([code, { name, code: langCode }]) => (
           <TouchableOpacity
             key={code}
             style={[
@@ -76,7 +78,7 @@ const Page3 = observer(() => {
               styles.languageButtonText,
               selectedLanguage === code && styles.selectedLanguageButtonText
             ]}>
-              {name} ({code})
+              {`${name} (${langCode})`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -125,6 +127,18 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  settingLabel: {
+    fontSize: 16,
+    marginRight: 10,
+  },
+  settingValue: {
+    fontSize: 16,
   },
 });
 

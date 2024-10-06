@@ -7,6 +7,7 @@ const StepIndicator = observer(() => {
   const steps = [1, 2, 3, 4]; // 改为只有4个步骤
 
   const handleStepPress = (step: number) => {
+    return;
     if (step <= appStore.currentStep) {
       appStore.setCurrentStep(step);
     }

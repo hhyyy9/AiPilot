@@ -25,71 +25,9 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-
-const LANGUAGE_MAP: { [key: string]: string } = {
-  af: "Afrikaans",
-  ar: "العربية",
-  hy: "Հայերեն",
-  az: "Azərbaycan",
-  be: "Беларуская",
-  bs: "Bosanski",
-  bg: "Български",
-  ca: "Català",
-  zh: "中文",
-  hr: "Hrvatski",
-  cs: "Čeština",
-  da: "Dansk",
-  nl: "Nederlands",
-  en: "English",
-  et: "Eesti",
-  fi: "Suomi",
-  fr: "Français",
-  gl: "Galego",
-  de: "Deutsch",
-  el: "Ελληνικά",
-  he: "עברית",
-  hi: "हिन्दी",
-  hu: "Magyar",
-  is: "Íslenska",
-  id: "Bahasa Indonesia",
-  it: "Italiano",
-  ja: "日本語",
-  kn: "ಕನ್ನಡ",
-  kk: "Қазақ",
-  ko: "한국어",
-  lv: "Latviešu",
-  lt: "Lietuvių",
-  mk: "Македонски",
-  ms: "Bahasa Melayu",
-  mr: "मराठी",
-  mi: "Māori",
-  ne: "नेपाली",
-  no: "Norsk",
-  fa: "فارسی",
-  pl: "Polski",
-  pt: "Português",
-  ro: "Română",
-  ru: "Русский",
-  sr: "Српски",
-  sk: "Slovenčina",
-  sl: "Slovenščina",
-  es: "Español",
-  sw: "Kiswahili",
-  sv: "Svenska",
-  tl: "Tagalog",
-  ta: "தமிழ்",
-  th: "ไทย",
-  tr: "Türkçe",
-  uk: "Українська",
-  ur: "اردو",
-  vi: "Tiếng Việt",
-  cy: "Cymraeg",
-};
-
 const Page4 = observer(() => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [interviewContent, setInterviewContent] = useState<string[]>([]);
-  const [resumeContent, setResumeContent] = useState("");
   const [isInterviewing, setIsInterviewing] = useState(false);
   const isInterviewingRef = useRef(false);
 
@@ -206,9 +144,35 @@ const Page4 = observer(() => {
     }
   };
 
-  useEffect(() => {
-    loadResumeContent();
-  }, []);
+  const loadResumeContent = async () => {
+    try {
+      const resumeFile = appStore.resumeFile;
+      let filePath = "";
+
+      if (typeof resumeFile === "string") {
+        filePath = resumeFile;
+      } else if (
+        resumeFile &&
+        typeof resumeFile === "object" &&
+        "uri" in resumeFile
+      ) {
+        filePath = resumeFile.uri;
+      } else {
+        throw new Error("无效的简历文件格式");
+      }
+
+      console.log("简历文件路径:", filePath);
+
+      // 使用 await 等待文件内容读取完成
+      const content = await FileSystem.readAsStringAsync(filePath);
+      console.log("简历内容加载成功");
+      return content; // 返回读取的内容
+    } catch (error) {
+      console.error("处理简历文件时出错:", error);
+      Alert.alert("错误", "无法处理简历文件");
+      return null; // 出错时返回 null
+    }
+  };
 
   useEffect(() => {
     // 每当对话内容更新时，滚动到底部
@@ -222,11 +186,9 @@ const Page4 = observer(() => {
         console.warn("Permissions not granted", result);
         return;
       }
-      console.log("更新isInterviewing为true1", isInterviewingRef.current);
       updateIsInterviewing(true);
-      console.log("更新isInterviewing为true2", isInterviewingRef.current);
       await ExpoSpeechRecognitionModule.start({
-        lang: "zh-CN",
+        lang: appStore.recordingLanguage,
         interimResults: true,
         maxAlternatives: 1,
         continuous: false,
@@ -247,68 +209,41 @@ const Page4 = observer(() => {
     }
   };
 
-  const loadResumeContent = () => {
-    try {
-      const resumeFile = appStore.resumeFile;
-      let filePath = "";
-
-      if (typeof resumeFile === "string") {
-        filePath = resumeFile;
-      } else if (
-        resumeFile &&
-        typeof resumeFile === "object" &&
-        "uri" in resumeFile
-      ) {
-        filePath = resumeFile.uri;
-      } else {
-        throw new Error("Invalid resume file format");
-      }
-
-      console.log("Resume file path:", filePath);
-
-      // 异步读取文件内容
-      FileSystem.readAsStringAsync(filePath)
-        .then((content) => {
-          setResumeContent(content);
-          console.log("Resume content loaded successfully");
-        })
-        .catch((error) => {
-          console.error("Error reading resume file:", error);
-          Alert.alert("错误", "无法读取简历文件");
-        });
-    } catch (error) {
-      console.error("Error processing resume file:", error);
-      Alert.alert("错误", "无法处理简历文件");
-    }
-  };
-
   const generateResponse = async (jobPositon: string, prompt: string) => {
-    const language = LANGUAGE_MAP[appStore.language] || "English";
+    const language = appStore.language;
 
     try {
+      const resumeContent = await loadResumeContent();
+      // console.log('resumeContent:', resumeContent?.length);
+      const msg = [
+        {
+          role: "system",
+          content: `You are a job candidate in an interview. Answer questions in ${language} based on the provided resume. Your responses should be concise, highlighting only the most relevant points. Be professional and specific, focusing on key achievements and skills.`,
+        },
+        {
+          role: "user",
+          content: `Job Position: ${jobPositon}\n\nResume content:\n\n${resumeContent}\n\nRemember this information for your responses.`,
+        },
+        {
+          role: "assistant",
+          content:
+            "Understood. I'm ready to provide concise, relevant answers based on the resume.",
+        },
+        {
+          role: "user",
+          content: `Interviewer's question: ${prompt}\nProvide a brief, focused answer highlighting key points.`,
+        },
+      ];
+      console.log('msg:', msg);
       const response = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: `You are a job candidate in an interview. Answer questions in ${language} based on the provided resume. Your responses should be concise, highlighting only the most relevant points. Be professional and specific, focusing on key achievements and skills.`,
-          },
-          {
-            role: "user",
-            content: `Job Position: ${jobPositon}\n\nResume content:\n\n${resumeContent}\n\nRemember this information for your responses.`,
-          },
-          {
-            role: "assistant",
-            content:
-              "Understood. I'm ready to provide concise, relevant answers based on the resume.",
-          },
-          {
-            role: "user",
-            content: `Interviewer's question: ${prompt}\nProvide a brief, focused answer highlighting key points.`,
-          },
-        ],
+        messages: msg.map(m => ({
+          role: m.role as 'user' | 'assistant' | 'system',
+          content: m.content
+        })),
         max_tokens: 300,
       });
+
 
       return response.choices[0].message.content;
     } catch (error) {
@@ -334,6 +269,8 @@ const Page4 = observer(() => {
       if (isInterviewingRef.current) {
         console.log("尝试结束面试");
         await handleStop();
+        appStore.resetState();
+        appStore.setCurrentStep(1);
       } else {
         console.log("尝试开始面试");
         console.log("更新isInterviewing为true1", isInterviewingRef.current);
@@ -382,7 +319,7 @@ const Page4 = observer(() => {
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Text style={styles.pageTitle}>第 4 页：AI 面试助手</Text>
+      <Text style={styles.pageTitle}>开始面试辅助</Text>
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
