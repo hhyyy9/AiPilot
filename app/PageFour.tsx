@@ -16,9 +16,14 @@ import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
+import Tts from 'react-native-tts';
+
 
 const OPENAI_API_KEY =
   "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";
+
+const TTS_TYPE:Number = 0; //0=buildin, 1=openai
+
 
 const openai = new OpenAI({
   apiKey: OPENAI_API_KEY,
@@ -35,6 +40,10 @@ const Page4 = observer(() => {
     transcriptTally: "",
     transcript: "",
   });
+
+  // 在组件外部或使用 useRef 来存储最新的 utteranceId
+  const latestUtteranceId = useRef<string | number>("");
+  const lastProcessedUtteranceId = useRef<string | number>("");
 
   const updateIsInterviewing = useCallback((value: boolean) => {
     setIsInterviewing(value);
@@ -74,6 +83,72 @@ const Page4 = observer(() => {
     }
   });
 
+  Tts.addEventListener("tts-start", event => {
+    console.log("tts-start", event)
+    if (isInterviewingRef.current) {
+      latestUtteranceId.current = event.utteranceId;
+    }
+  });
+
+  Tts.addEventListener('tts-progress', (event) => {
+    // console.log("progress", event)
+  });
+
+
+  Tts.addEventListener("tts-finish", event => {
+    console.log("tts-finish", event)
+    if (event.utteranceId !== latestUtteranceId.current) {
+      console.log("忽略旧的 TTS 完成事件");
+      return;
+    }else{
+      latestUtteranceId.current = event.utteranceId;
+    }
+
+    if (event.utteranceId !== lastProcessedUtteranceId.current)
+    {
+      console.log('音频播放完成，准备开始新的录音',isInterviewingRef.current);
+      if (isInterviewingRef.current) {
+        handleStart();
+      }
+      lastProcessedUtteranceId.current = event.utteranceId;
+    }
+
+  });
+
+
+  Tts.addEventListener("tts-cancel", event => {
+    console.log("tts-cancel", event)
+  });
+
+  const initTts = async () => {
+    const voices = await Tts.voices();
+    // const availableVoices = voices
+    //   .filter(v => !v.networkConnectionRequired && !v.notInstalled)
+    //   .map(v => {
+    //     return { id: v.id, name: v.name, language: v.language };
+    //   });
+    // console.log('voices:', voices);
+    if (voices && voices.length > 0) {
+      try {
+        await Tts.setDefaultLanguage(appStore.recordingLanguage);
+      } catch (err) {
+        // My Samsung S9 has always this error: "Language is not supported"
+        Alert.alert("错误", "语音语言设置失败，请报告给开发者");
+        console.log(`setDefaultLanguage error `, err);
+      }
+      //await Tts.setDefaultVoice(voices[0].id);
+      Tts.setIgnoreSilentSwitch("ignore");
+      Tts.setDucking(true);
+      Tts.setDefaultRate(0.5);
+
+    }
+  };
+
+  const playTts = async (text: string) => {
+    Tts.stop();
+    Tts.speak(text);
+  };
+
   const handleSpeechEnd = async (finalTranscription: string) => {
     console.log('开始处理文字转语音', finalTranscription);
     if (finalTranscription) {
@@ -85,16 +160,19 @@ const Page4 = observer(() => {
         addNewQAPair(finalTranscription, answer, 1);
 
         // 将回答转换为语音
-        console.log('将回答转换为语音');
-        const response = await openai.audio.speech.create({
-          model: "tts-1",
-          voice: appStore.language === "en" ? "nova" : "alloy",
-          input: answer,
-        });
+        if (TTS_TYPE === 1){
+          console.log('将回答转换为语音');
+          const response = await openai.audio.speech.create({
+            model: "tts-1",
+            voice: appStore.language === "en" ? "nova" : "alloy",
+            input: answer,
+          });
+          const audioData = await response.arrayBuffer();
+          await playAudio(audioData);
+        }else{
+          await playTts(answer);
+        }
 
-        const audioData = await response.arrayBuffer();
-        await playAudio(audioData);
-        console.log('音频播放完成，准备开始新的录音',isInterviewingRef.current);
       } else {
         console.error("无法生成回答");
         Alert.alert("错误", "无法生成回答，请重试。");
@@ -161,7 +239,7 @@ const Page4 = observer(() => {
         throw new Error("无效的简历文件格式");
       }
 
-      console.log("简历文件路径:", filePath);
+      // console.log("简历文件路径:", filePath);
 
       // 使用 await 等待文件内容读取完成
       const content = await FileSystem.readAsStringAsync(filePath);
@@ -187,11 +265,15 @@ const Page4 = observer(() => {
         return;
       }
       updateIsInterviewing(true);
+
       await ExpoSpeechRecognitionModule.start({
         lang: appStore.recordingLanguage,
         interimResults: true,
         maxAlternatives: 1,
         continuous: false,
+        // requiresOnDeviceRecognition: true,
+        // androidIntent:"android.speech.action.RECOGNIZE_SPEECH",
+        // iosTaskHint:"dictation",
       });
       console.log("语音识别已启动", isInterviewingRef.current);
     } catch (error) {
@@ -201,7 +283,8 @@ const Page4 = observer(() => {
 
   const handleStop = async () => {
     try {
-      await ExpoSpeechRecognitionModule.stop();
+      // await ExpoSpeechRecognitionModule.stop();
+      await ExpoSpeechRecognitionModule.abort();
       updateIsInterviewing(false);
       console.log("语音识别已停止");
     } catch (error) {
@@ -214,6 +297,15 @@ const Page4 = observer(() => {
 
     try {
       const resumeContent = await loadResumeContent();
+      if (!resumeContent) {
+        Alert.alert('提示', '无法加载简历内容', [
+          {text: '确定', onPress: () => {
+            appStore.resetState();
+            appStore.setCurrentStep(1);
+          }}
+        ]);
+        return;
+      }
       // console.log('resumeContent:', resumeContent?.length);
       const msg = [
         {
@@ -234,7 +326,7 @@ const Page4 = observer(() => {
           content: `Interviewer's question: ${prompt}\nProvide a brief, focused answer highlighting key points.`,
         },
       ];
-      console.log('msg:', msg);
+      console.log('msg:', msg.length);
       const response = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: msg.map(m => ({
@@ -269,13 +361,13 @@ const Page4 = observer(() => {
       if (isInterviewingRef.current) {
         console.log("尝试结束面试");
         await handleStop();
+        
         appStore.resetState();
         appStore.setCurrentStep(1);
       } else {
         console.log("尝试开始面试");
-        console.log("更新isInterviewing为true1", isInterviewingRef.current);
         updateIsInterviewing(true);
-        console.log("更新isInterviewing为true2", isInterviewingRef.current);
+        initTts();
         await handleStart();
         await addNewQAPair("开始面试...", "", 0);
       }

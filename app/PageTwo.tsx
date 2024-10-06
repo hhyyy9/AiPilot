@@ -1,150 +1,53 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { Audio } from 'expo-av';
 import { appStore } from './stores/AppStore';
 import PageLayout from './components/PageLayout';
-import * as FileSystem from 'expo-file-system';
-
+import { startRecording, stopRecording, playAudioFromPath, deleteAudioFile } from './utils/AudioHelper';
 
 const Page2 = observer(() => {
   const [isRecording, setIsRecording] = useState(false);
   const [hasTestedMic, setHasTestedMic] = useState(false);
-  const [hasRecordedFile, setHasRecordedFile] = useState(false);
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const isRecordingPrepared = useRef(false);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [recordedFilePath, setRecordedFilePath] = useState<string | null>(null);
 
-
-
-  const checkPermissions = async () => {
-    const { status } = await Audio.requestPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('未获得录音权限');
-      return false;
-    }
-    return true;
-  };
-
-  useEffect(() => {
-    (async () => {
-      console.log('请求音频录制权限...');
-      const { status } = await Audio.requestPermissionsAsync();
-      console.log('音频录制权限状态:', status);
-      if (status !== 'granted') {
-        console.warn('未获得音频录制权限');
-        Alert.alert('权限不足', '请允许应用访问麦克风以进行录音测试。');
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      stopRecording();
-    };
-  }, []);
-
-  const startRecording = useCallback(async () => {
-    try {
-      console.log('开始录音流程...');
-      await stopRecording();
-
-      console.log('设置音频模式...');
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-      console.log('音频模式设置完成');
-
-      console.log('创建新的录音实例...');
-      const recording = new Audio.Recording();
-      recordingRef.current = recording;
-
-      console.log('准备录音...');
-      await recording.prepareToRecordAsync({
-        android: {
-          extension: '.m4a',
-          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: '.m4a',
-          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
-          audioQuality: Audio.IOSAudioQuality.MAX,
-          sampleRate: 44100,
-          numberOfChannels: 2,
-          bitRate: 128000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {
-          mimeType: 'audio/webm',
-          bitsPerSecond: 128000,
-        },
-      });
-      isRecordingPrepared.current = true;
-      console.log('录音准备完成');
-
-      console.log('开始录音...');
-      await recording.startAsync();
-      console.log('录音已开始');
-
-      setIsRecording(true);
-      setHasTestedMic(true);
-      setHasRecordedFile(false);
-    } catch (error) {
-      console.error('录音错误:', error);
-      Alert.alert('录音错误', '无法开始录音，请重试。');
-    }
-  }, []);
-
-  const stopRecording = useCallback(async () => {
-    console.log('停止录音...');
-    if (recordingRef.current && isRecordingPrepared.current) {
+  const handleRecording = useCallback(async () => {
+    if (isRecording) {
+      // 停止录音
+      setIsRecording(false);
       try {
-        await recordingRef.current.stopAndUnloadAsync();
-        console.log('录音已停止');
-
-        await checkFileSize();
-
-        setRecording(recordingRef.current);
-        setHasRecordedFile(true);
+        await stopRecording();
+        setHasTestedMic(true);
       } catch (error) {
-        console.error('停止录音时出错：', error);
-      }
-      recordingRef.current = null;
-      isRecordingPrepared.current = false;
-    }
-    setIsRecording(false);
-  }, []);
-
-  const checkFileSize = useCallback(async () => {
-    if (recordingRef.current) {
-      const uri = recordingRef.current.getURI();
-      if (uri) {
-        console.log('检查文件大小...');
-        const fileInfo = await FileSystem.getInfoAsync(uri, { size: true });
-        if (fileInfo.exists && 'size' in fileInfo) {
-          console.log('文件大小:', fileInfo.size, '字节');
-          setHasRecordedFile(fileInfo.size > 0);
-        } else {
-          console.warn('文件不存在或无法获取大小信息');
-          setHasRecordedFile(false);
-        }
-      } else {
-        console.warn('无法获取录音文件 URI');
-        setHasRecordedFile(false);
+        console.error('停止录音错误:', error);
+        Alert.alert('录音错误', '无法停止录音，请重试。');
       }
     } else {
-      console.warn('没有可用的录音');
-      setHasRecordedFile(false);
+      // 开始录音
+      setIsRecording(true);
+      try {
+        const filePath = await startRecording();
+        setRecordedFilePath(filePath);
+      } catch (error) {
+        console.error('开始录音错误:', error);
+        Alert.alert('录音错误', '无法开始录音，请重试。');
+        setIsRecording(false);
+      }
     }
-  }, []);
+  }, [isRecording]);
+
+  const playRecording = useCallback(async () => {
+    if (recordedFilePath) {
+      try {
+        await playAudioFromPath(recordedFilePath);
+        await deleteAudioFile(recordedFilePath);
+      } catch (error) {
+        console.error('播放录音时出错：', error);
+        Alert.alert('播放错误', '无法播放录音，请重试。');
+      }
+    } else {
+      Alert.alert('提示', '没有可用的录音');
+    }
+  }, [recordedFilePath]);
 
   const handleNextStep = useCallback(() => {
     if (hasTestedMic) {
@@ -162,36 +65,22 @@ const Page2 = observer(() => {
     </TouchableOpacity>
   );
 
-  const playRecording = async () => {
-    if (recording) {
-      try {
-        const { sound } = await recording.createNewLoadedSoundAsync();
-        setSound(sound);
-        await sound.playAsync();
-      } catch (error) {
-        console.error('播放录音时出错：', error);
-        Alert.alert('播放错误', '无法播放录音，请重试。');
-      }
-    }
-  };
-
   return (
     <PageLayout footer={renderFooter()}>
       <Text style={styles.pageTitle}>录音设备测试</Text>
       <View style={styles.testContainer}>
         <TouchableOpacity
           style={[styles.recordButton, isRecording && styles.recordingButton]}
-          onPressIn={startRecording}
-          onPressOut={stopRecording}
+          onPress={handleRecording}
         >
           <Text style={styles.recordButtonText}>
-            {isRecording ? '正在录音' : '按住测试麦克风'}
+            {isRecording ? '停止录音' : '开始录音'}
           </Text>
         </TouchableOpacity>
         <Text style={styles.instruction}>
-          {hasTestedMic ? '麦克风测试完成' : '请按住按钮进行麦克风测试'}
+          {isRecording ? '正在录音...' : hasTestedMic ? '麦克风测试完成' : '点击按钮开始录音'}
         </Text>
-        {hasRecordedFile && (
+        {recordedFilePath && !isRecording && (
           <TouchableOpacity style={styles.playButton} onPress={playRecording}>
             <Text style={styles.playButtonText}>播放录音</Text>
           </TouchableOpacity>
@@ -262,7 +151,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-
 });
 
 export default Page2;

@@ -9,7 +9,7 @@ PODS:
   - EXJSONUtils (0.13.1)
   - EXManifests (0.14.3):
     - ExpoModulesCore
-  - Expo (51.0.34):
+  - Expo (51.0.36):
     - ExpoModulesCore
   - expo-dev-client (4.0.27):
     - EXManifests
@@ -230,7 +230,7 @@ PODS:
     - ExpoModulesCore
   - ExpoKeepAwake (13.0.2):
     - ExpoModulesCore
-  - ExpoModulesCore (1.12.24):
+  - ExpoModulesCore (1.12.25):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -253,7 +253,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - ExpoSpeechRecognition (0.2.20):
+  - ExpoSpeechRecognition (0.2.21):
     - ExpoModulesCore
   - ExpoSystemUI (3.0.7):
     - ExpoModulesCore
@@ -1521,6 +1521,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - Yoga
   - SocketRocket (0.7.0)
+  - TextToSpeech (4.1.1):
+    - React-Core
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -1608,6 +1610,7 @@ DEPENDENCIES:
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
+  - TextToSpeech (from `../node_modules/react-native-tts`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -1780,6 +1783,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  TextToSpeech:
+    :path: "../node_modules/react-native-tts"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -1790,7 +1795,7 @@ SPEC CHECKSUMS:
   EXConstants: 409690fbfd5afea964e5e9d6c4eb2c2b59222c59
   EXJSONUtils: 30c17fd9cc364d722c0946a550dfbf1be92ef6a4
   EXManifests: c1fab4c3237675e7b0299ea8df0bcb14baca4f42
-  Expo: 963ef4ae102e4f4ac114a8510d70127c44adffbf
+  Expo: 51c2d7fee7a8c7195ac257c9f9503378800d334e
   expo-dev-client: 85deba11af998ea86e62093b17fce56aa2c6f26b
   expo-dev-launcher: c8e85bf244a2492448c88adbc3585ca13572f7b9
   expo-dev-menu: 0db38ce92be7228dadb588f7069e037fd9d165d8
@@ -1801,8 +1806,8 @@ SPEC CHECKSUMS:
   ExpoFont: 00756e6c796d8f7ee8d211e29c8b619e75cbf238
   ExpoHead: fcb28a68ed4ba28f177394d2dfb8a0a8824cd103
   ExpoKeepAwake: 3b8815d9dd1d419ee474df004021c69fdd316d08
-  ExpoModulesCore: f30a203ff1863bab3dd9f4421e7fc1564797f18a
-  ExpoSpeechRecognition: 72cad8ec59dcdcfe0e81bfbee6180ca27315f7cf
+  ExpoModulesCore: 0e7d4d5c13169bbbd53496721d811adbcc5d600a
+  ExpoSpeechRecognition: 80eefd4f4bd7541f5fad24744b19a4b36a365414
   ExpoSystemUI: d4f065a016cae6721b324eb659cdee4d4cf0cb26
   ExpoWebBrowser: 7595ccac6938eb65b076385fd23d035db9ecdc8e
   EXSplashScreen: 17a656c08a0095be15b620c52e61dfdb665863d2
@@ -1867,6 +1872,7 @@ SPEC CHECKSUMS:
   RNReanimated: 35f9ac9c3ac42d0497ebd1cce5c39d7687a8493e
   RNScreens: b32a9ff15bea7fcdbe5dff6477bc503f792b1208
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
+  TextToSpeech: 2b930ec3756afde499061f4f01ea895e1f75dccb
   Yoga: 950bbfd7e6f04790fdb51149ed51df41f329fcc8
 
 PODFILE CHECKSUM: 7c4ca7c9e1b1a7722eadd7deab87c1462b9eb572

@@ -35,6 +35,8 @@ const Page1 = observer(() => {
       const savedResumeFile = await AsyncStorage.getItem('resumeFile');
       if (savedResumeFile) {
         setResumeFile(JSON.parse(savedResumeFile));
+      }else{
+        setResumeFile(null);
       }
     } catch (error) {
       console.error('加载简历文件信息失败:', error);
