@@ -283,8 +283,7 @@ const Page4 = observer(() => {
 
   const handleStop = async () => {
     try {
-      // await ExpoSpeechRecognitionModule.stop();
-      await ExpoSpeechRecognitionModule.abort();
+      await ExpoSpeechRecognitionModule.stop();
       updateIsInterviewing(false);
       console.log("语音识别已停止");
     } catch (error) {
