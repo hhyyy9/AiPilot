@@ -70,6 +70,10 @@ https://docs.expo.dev/develop/development-builds/create-a-build/
 https://github.com/jamsch/expo-speech-recognition?tab=readme-ov-file
 
 
+eas build --profile development --platform android
+
+
+
 npx expo-cli clean
 
 rm -rf node_modules
@@ -81,6 +85,13 @@ pod install
 cd ..
 
 npx expo run:ios
+
+
+cd android
+./gradlew clean
+cd ..
+
+
 npx expo run:android
 
-npx expo-cli doctor
+npx expo-doctor
