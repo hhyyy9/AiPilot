@@ -15,6 +15,9 @@ import OpenAI from 'openai';
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
+  isRecognitionAvailable,
+  supportsOnDeviceRecognition,
+  supportsRecording
 } from "expo-speech-recognition";
 import Tts from 'react-native-tts';
 
@@ -51,6 +54,15 @@ const Page4 = observer(() => {
     console.log(`isInterviewing 更新为: ${value}`);
   }, []);
 
+  const available1 = isRecognitionAvailable();
+  console.log("Speech recognition available:", available1);
+
+  const available2 = supportsOnDeviceRecognition();
+  console.log("OnDevice recognition available:", available2);
+
+  const available3 = supportsRecording();
+  console.log("Recording available:", available3);
+
   useSpeechRecognitionEvent("start", () => {
     console.log("Speech recognition started", isInterviewingRef.current);
   });
@@ -77,6 +89,7 @@ const Page4 = observer(() => {
 
   useSpeechRecognitionEvent("error", (event) => {
     console.log("Speech recognition error:", event.error, event.message);
+    Alert.alert("错误", "语音识别错误，请重试。");
     if (event.error === 'no-speech' && isInterviewingRef.current) {
       console.log("No speech detected, restarting recognition...");
       // handleStart();
@@ -274,6 +287,7 @@ const Page4 = observer(() => {
         recordingOptions: {
           persist: true,
         },
+        androidIntentOptions: { EXTRA_LANGUAGE_MODEL: "web_search" }
         // requiresOnDeviceRecognition: true,
         // androidIntent:"android.speech.action.RECOGNIZE_SPEECH",
         // iosTaskHint:"dictation",
