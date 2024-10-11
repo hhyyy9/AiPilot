@@ -39,7 +39,13 @@ const Page2 = observer(() => {
     if (recordedFilePath) {
       try {
         await playAudioFromPath(recordedFilePath);
-        await deleteAudioFile(recordedFilePath);
+        // 判断是否为生产环境
+        if (__DEV__) {
+          console.log('当前为开发环境，播放录音后不删除文件');
+        } else {
+          console.log('当前为生产环境，播放录音后将删除文件');
+          await deleteAudioFile(recordedFilePath);
+        }
       } catch (error) {
         console.error('播放录音时出错：', error);
         Alert.alert('播放错误', '无法播放录音，请重试。');

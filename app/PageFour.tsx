@@ -266,11 +266,14 @@ const Page4 = observer(() => {
       }
       updateIsInterviewing(true);
 
-      await ExpoSpeechRecognitionModule.start({
+      ExpoSpeechRecognitionModule.start({
         lang: appStore.recordingLanguage,
         interimResults: true,
         maxAlternatives: 1,
         continuous: false,
+        recordingOptions: {
+          persist: true,
+        },
         // requiresOnDeviceRecognition: true,
         // androidIntent:"android.speech.action.RECOGNIZE_SPEECH",
         // iosTaskHint:"dictation",

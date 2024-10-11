@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system';
 
 let recording: Audio.Recording | null = null;
 
+
 const startRecording = async (): Promise<string> => {
     try {
         console.log('请求录音权限');
@@ -21,11 +22,13 @@ const startRecording = async (): Promise<string> => {
             playThroughEarpieceAndroid: false,
             staysActiveInBackground: true,
         });
+      
+        // const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.LOW_QUALITY);
+        // recording = newRecording;
+        recording = new Audio.Recording();
 
         console.log('准备录音');
-        // await new Promise(resolve => setTimeout(resolve, 300)); // 添加 300ms 延迟
-        const { recording: newRecording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.LOW_QUALITY);
-        recording = newRecording;
+        await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.LOW_QUALITY);
 
         console.log('开始录音');
         await recording.startAsync();
@@ -54,7 +57,6 @@ const stopRecording = async (): Promise<string> => {
         if (!uri) {
             throw new Error('录音失败，未获得文件路径');
         }
-        recording = null;
         return uri;
     } catch (error) {
         console.error('停止录音时出错:', error);
