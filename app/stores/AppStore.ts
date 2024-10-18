@@ -1,5 +1,6 @@
-import { makeAutoObservable } from 'mobx';
-
+import { makeAutoObservable,runInAction} from 'mobx';
+import axios from 'axios';
+import { apiService } from '../services/ApiService';
 
 export const LANGUAGE_MAP: { [key: string]: { name: string, code: string } } = {
   'en': { name: 'English', code: 'en-US' },
@@ -15,6 +16,7 @@ export const LANGUAGE_MAP: { [key: string]: { name: string, code: string } } = {
   'hi': { name: 'हिन्दी', code: 'hi-IN' }
 };
 
+
 class AppStore {
   currentStep: number = 1;
   position: string = '';
@@ -22,7 +24,14 @@ class AppStore {
   language: string = 'English';
   recordingLanguage: string = 'en-US';
   currentTranscription: string = '';
-  
+  userId: string = '';
+  userName: string = '';
+  accessToken: string = '';
+  refreshToken: string = '';
+
+  user: any = null;
+  isLoggedIn: boolean = false;
+  currentInterview: any = null;
 
   constructor() {
     makeAutoObservable(this);
@@ -77,6 +86,104 @@ class AppStore {
     this.currentTranscription = '';
     this.position = '';
     this.recordingLanguage = 'en-US';
+  }
+
+  async login(username: string, password: string) {
+    try {
+      const response = await apiService.login(username, password);
+      runInAction(() => {
+        this.user = response.data.userId;
+        this.isLoggedIn = true;
+        apiService.setToken(response.data.accessToken);
+        apiService.setRefreshToken(response.data.refreshToken);
+      });
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  }
+
+  async register(username: string, password: string) {
+    try {
+      await apiService.register(username, password);
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
+  }
+
+  async startInterview(positionName: string, resumeUrl: string) {
+    try {
+      const response = await apiService.startInterview(positionName, resumeUrl);
+      runInAction(() => {
+        this.currentInterview = response.data;
+      });
+    } catch (error) {
+      console.error('Start interview failed:', error);
+      throw error;
+    }
+  }
+
+  async endInterview() {
+    if (!this.user || !this.currentInterview) return;
+    try {
+      await apiService.endInterview(this.user.id);
+      runInAction(() => {
+        this.currentInterview = null;
+      });
+    } catch (error) {
+      console.error('End interview failed:', error);
+      throw error;
+    }
+  }
+
+  async aiTrigger(prompt: string, language: string) {
+    if (!this.currentInterview) return;
+    try {
+      const response = await apiService.aiTrigger(
+        this.currentInterview.id,
+        this.currentInterview.positionName,
+        prompt,
+        language,
+        this.currentInterview.resumeContent
+      );
+      return response.data;
+    } catch (error) {
+      console.error('AI trigger failed:', error);
+      throw error;
+    }
+  }
+
+  async createCheckoutSession(priceId: string, successUrl: string, cancelUrl: string) {
+    try {
+      const response = await apiService.createCheckoutSession(priceId, successUrl, cancelUrl);
+      return response.data;
+    } catch (error) {
+      console.error('Create checkout session failed:', error);
+      throw error;
+    }
+  }
+
+  async confirmCheckoutSession(sessionId: string) {
+    try {
+      const response = await apiService.confirmCheckoutSession(sessionId);
+      runInAction(() => {
+        this.user.credits = response.data.totalCredits;
+      });
+    } catch (error) {
+      console.error('Confirm checkout session failed:', error);
+      throw error;
+    }
+  }
+
+  async uploadCV(file: File) {
+    try {
+      const response = await apiService.uploadCV(file);
+      return response.data;
+    } catch (error) {
+      console.error('Upload CV failed:', error);
+      throw error;
+    }
   }
 }
 
