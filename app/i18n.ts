@@ -28,7 +28,7 @@ i18n
           getUserInfoErrorDetail: "An error occurred while getting user information",
           startNewInterview: "Start New Interview",
           user: "User",
-          remainingCredits: "Remaining Credits",
+          remainingCredits: "Credits",
           interviewRecords: "Interview Records",
           ongoing: "Ongoing",
           ended: "Ended",
@@ -56,6 +56,7 @@ i18n
           interviewStarted: "Interview started",
           interviewStopped: "Interview stopped",
           errorHandlingInterviewState: "An error occurred while handling the interview state, please try again.",
+          insufficientCredits: "Insufficient credits, please recharge at the official website",
           // PageOne 相关翻译
           fillApplicationInfo: "Fill Application Information",
           enterInterviewPosition: "Please enter the interview position",
@@ -133,7 +134,7 @@ i18n
           getUserInfoErrorDetail: "获取用户信息时发生错误",
           startNewInterview: "开始新面试",
           user: "用户",
-          remainingCredits: "剩余积分",
+          remainingCredits: "积分",
           interviewRecords: "面试记录",
           ongoing: "进行中",
           ended: "已结束",
@@ -161,6 +162,7 @@ i18n
           interviewStarted: "面试已开始",
           interviewStopped: "面试已停止",
           errorHandlingInterviewState: "处理面试状态时出现问题，请重试。",
+          insufficientCredits: "积分不足,请前往官方网站充值",
           // PageOne 相关翻译
           fillApplicationInfo: "填写应聘信息",
           enterInterviewPosition: "请输入面试职位",

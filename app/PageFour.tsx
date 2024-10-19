@@ -15,7 +15,7 @@ import Header from "./components/Header";
 import StepIndicator from "./components/StepIndicator";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
-// import OpenAI from 'openai';
+import { useKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -26,6 +26,7 @@ import {
 import Tts from 'react-native-tts';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { use } from "i18next";
 
 // const OPENAI_API_KEY =
 //   "xxx";
@@ -47,6 +48,8 @@ const PageFour = observer(() => {
   // const [interviewId, setInterviewId] = useState<string>("");
   const interviewIdRef = useRef<string>("");
 
+  useKeepAwake();
+
   const [transcription, setTranscription] = useState({
     transcriptTally: "",
     transcript: "",
@@ -62,17 +65,17 @@ const PageFour = observer(() => {
     console.log(`isInterviewing 更新为: ${value}`);
   }, []);
 
-  const available1 = isRecognitionAvailable();
-  console.log("Speech recognition available:", available1);
+  // const available1 = isRecognitionAvailable();
+  // console.log("Speech recognition available:", available1);
 
-  const available2 = supportsOnDeviceRecognition();
-  console.log("OnDevice recognition available:", available2);
+  // const available2 = supportsOnDeviceRecognition();
+  // console.log("OnDevice recognition available:", available2);
 
-  const available3 = supportsRecording();
-  console.log("Recording available:", available3);
+  // const available3 = supportsRecording();
+  // console.log("Recording available:", available3);
 
   useSpeechRecognitionEvent("start", () => {
-    console.log("Speech recognition started", isInterviewingRef.current);
+    console.log("Speech recognition started:", isInterviewingRef.current, ":" ,new Date().toISOString());
   });
 
   useSpeechRecognitionEvent("end", (event) => {
@@ -80,7 +83,7 @@ const PageFour = observer(() => {
   });
 
   useSpeechRecognitionEvent("result", (event) => {
-    console.log("onSpeechResults: ", event, isInterviewingRef.current);
+    // console.log("onSpeechResults: ", event, isInterviewingRef.current);
     if (!isInterviewingRef.current) return;
 
     const transcriptResult = event.results[0]?.transcript || "";
@@ -90,7 +93,7 @@ const PageFour = observer(() => {
     }));
 
     if (event.isFinal) {
-      console.log('最终识别结果: ', transcriptResult);
+      console.log('最终识别结果: ', transcriptResult, ":" , new Date().toISOString());
       handleSpeechEnd(transcriptResult);
     }
   });
@@ -104,7 +107,7 @@ const PageFour = observer(() => {
   });
 
   Tts.addEventListener("tts-start", event => {
-    console.log("tts-start", event)
+    // console.log("tts-start", event)
     if (isInterviewingRef.current) {
       latestUtteranceId.current = event.utteranceId;
     }
@@ -115,9 +118,9 @@ const PageFour = observer(() => {
   });
 
   Tts.addEventListener("tts-finish", event => {
-    console.log("tts-finish", event)
+    // console.log("tts-finish", event)
     if (event.utteranceId !== latestUtteranceId.current) {
-      console.log("忽略旧的 TTS 完成事件");
+      // console.log("忽略旧的 TTS 完成事件");
       return;
     }else{
       latestUtteranceId.current = event.utteranceId;
@@ -228,7 +231,7 @@ const PageFour = observer(() => {
         await handleStart();
       }
     }
-  }; */
+  }; 
 
   const loadResumeContent = async () => {
     try {
@@ -256,7 +259,7 @@ const PageFour = observer(() => {
       Modal.alert("错误", "无法处理简历文件");
       return null; // 出错时返回 null
     }
-  };
+  };*/
 
   useEffect(() => {
     // 每当 interviewContent 更新时，滚动到底部
@@ -305,15 +308,19 @@ const PageFour = observer(() => {
   const generateResponse = async (prompt: string) => {
   
     try {
-      console.log('generateResponse:', generateResponse);
-      console.log('interviewId:', interviewIdRef.current);
-      console.log('prompt:', prompt);
+      // console.log('generateResponse:', generateResponse);
+      // console.log('interviewId:', interviewIdRef.current);
+      // console.log('prompt:', prompt);
       // 调用aiTrigger获取AI回答
       const aiResponse = await appStore.aiTrigger(
         interviewIdRef.current,
         prompt,
       );
       console.log('aiResponse:', aiResponse);
+      if (!aiResponse.success && aiResponse.code === "E2003"){
+        Modal.alert(t('errorTitle'), t('insufficientCredits'));
+        return null;
+      }
       if (!aiResponse.success) {
         Modal.alert(t('errorTitle'), aiResponse.error);
         return null;

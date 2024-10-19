@@ -1,12 +1,13 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import axios from 'axios';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-console.log('当前环境:', isDevelopment ? '开发环境' : '生产环境');
-let BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
-if (!isDevelopment) {
-  BASE_URL = process.env.EXPO_PUBLIC_API_URL;
-}
+// const isDevelopment = process.env.NODE_ENV === 'development';
+// console.log('当前环境:', isDevelopment ? '开发环境' : '生产环境');
+// let BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
+// if (!isDevelopment) {
+// const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
+// }
 
 export const LANGUAGE_MAP: { [key: string]: { name: string, code: string } } = {
   'en': { name: 'English', code: 'en-US' },
@@ -142,7 +143,7 @@ class AppStore {
       });
       return response.data;
     } catch (error) {
-      return null;
+      return error;
     }
   }
 
@@ -150,7 +151,7 @@ class AppStore {
     try {
       console.log('login request:', username, password);
       const response = await this.request('POST', '/userLogin', { username, password });
-      if (response) {
+      if (response.success) {
         runInAction(() => {
           console.log('login response:', response);
           this.user = response.data.userId;
@@ -197,9 +198,11 @@ class AppStore {
     if (!this.user || !this.currentInterview) return;
     try {
       const response = await this.request('POST', '/endInterview', { userId: this.user });
+      if (response.success) {
       runInAction(() => {
         this.currentInterview = null;
-      });
+        });
+      }
       return response;
     } catch (error) {
       console.error('End interview failed:', error);
@@ -230,9 +233,11 @@ class AppStore {
   async confirmCheckoutSession(sessionId: string) {
     try {
       const response = await this.request('POST', '/confirm-checkout-session', { sessionId });
-      runInAction(() => {
-        this.user.credits = response.data.totalCredits;
-      });
+      if (response.success) {
+        runInAction(() => {
+          this.user.credits = response.data.totalCredits;
+        });
+      }
       return response;
     } catch (error) {
       console.error('Confirm checkout session failed:', error);
@@ -274,9 +279,9 @@ class AppStore {
     }
   }
 
-  async getUserInfo() :Promise<any>{
+  async getUserInfo(page:number=1,limit:number=10) :Promise<any>{
     try {
-      const response = await this.request('GET', '/getUserInfo');
+      const response = await this.request('GET', `/getUserInfo?page=${page}&limit=${limit}`);
       this.userInfo = response.data;
       return response;
     } catch (error) {

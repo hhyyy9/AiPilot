@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.hhyyy99.AIPilot",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "需要访问麦克风以进行录音测试"
+        "NSMicrophoneUsageDescription": "need microphone to record audio"
       }
     },
     "android": {
