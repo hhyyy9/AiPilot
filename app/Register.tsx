@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { apiService } from './services/ApiService';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Input, Button, Modal, Text, ActivityIndicator } from '@ant-design/react-native';
+import { appStore } from './stores/AppStore';
+import { useTranslation } from 'react-i18next';
 
 const Register = observer(() => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -45,7 +47,12 @@ const Register = observer(() => {
 
     setIsLoading(true);
     try {
-      await apiService.register(username, password);
+      const response = await appStore.register(username, password);
+      if (!response.success) {
+        Modal.alert('错误', response.error);
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(false);
       Modal.alert('成功', '注册成功', [
         { text: 'OK', onPress: () => navigation.navigate('Login' as never) }
@@ -66,7 +73,7 @@ const Register = observer(() => {
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
           <Ionicons name="chevron-back" size={28} color="#007AFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>注册</Text>
+        <Text style={styles.headerTitle}>{t('register')}</Text>
       </View>
       <View style={styles.container}>
         <Image
@@ -76,21 +83,21 @@ const Register = observer(() => {
         />
         <View style={styles.inputContainer}>
           <Input
-            placeholder="邮箱地址"
+            placeholder={t('emailPlaceholder')}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
             type="text"
             style={styles.input}          />
           <Input
-            placeholder="密码"
+            placeholder={t('passwordPlaceholder')}
             value={password}
             onChangeText={setPassword}
             type="password"
             style={styles.input}
           />
           <Input
-            placeholder="确认密码"
+            placeholder={t('confirmPassword')}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             type="password"
@@ -103,7 +110,7 @@ const Register = observer(() => {
           style={styles.buttonContainer}
           disabled={!!emailError}
         >
-          注册
+          {t('registerButton')}
         </Button>
         <Modal
           transparent
@@ -113,7 +120,7 @@ const Register = observer(() => {
         >
             <View style={styles.modalContent}>
               <ActivityIndicator size="large"/>
-              <Text style={styles.loadingText}>注册中...</Text>
+              <Text style={styles.loadingText}>{t('registering')}</Text>
             </View>
         </Modal>
       </View>

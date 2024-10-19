@@ -5,13 +5,17 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  View,
 } from "react-native";
 import { observer } from "mobx-react-lite";
+import { Button, Modal, ActivityIndicator } from '@ant-design/react-native';
 import { appStore } from "./stores/AppStore";
 import PageLayout from "./components/PageLayout";
+import Header from "./components/Header";
+import StepIndicator from "./components/StepIndicator";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
-import OpenAI from 'openai';
+// import OpenAI from 'openai';
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -20,24 +24,28 @@ import {
   supportsRecording
 } from "expo-speech-recognition";
 import Tts from 'react-native-tts';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
-
-const OPENAI_API_KEY =
-  "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";
+// const OPENAI_API_KEY =
+//   "xxx";
 
 const TTS_TYPE:Number = 0; //0=buildin, 1=openai
 
-
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
+// const openai = new OpenAI({
+//   apiKey: OPENAI_API_KEY,
+//   dangerouslyAllowBrowser: true,
+// });
 
 const PageFour = observer(() => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [interviewContent, setInterviewContent] = useState<string[]>([]);
   const [isInterviewing, setIsInterviewing] = useState(false);
   const isInterviewingRef = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigation = useNavigation();
+  // const [interviewId, setInterviewId] = useState<string>("");
+  const interviewIdRef = useRef<string>("");
 
   const [transcription, setTranscription] = useState({
     transcriptTally: "",
@@ -89,11 +97,10 @@ const PageFour = observer(() => {
 
   useSpeechRecognitionEvent("error", (event) => {
     console.log("Speech recognition error:", event.error, event.message);
-    Alert.alert("错误", "语音识别错误，请重试。");
     if (event.error === 'no-speech' && isInterviewingRef.current) {
       console.log("No speech detected, restarting recognition...");
-      // handleStart();
     }
+    handleStart();
   });
 
   Tts.addEventListener("tts-start", event => {
@@ -106,7 +113,6 @@ const PageFour = observer(() => {
   Tts.addEventListener('tts-progress', (event) => {
     // console.log("progress", event)
   });
-
 
   Tts.addEventListener("tts-finish", event => {
     console.log("tts-finish", event)
@@ -125,9 +131,7 @@ const PageFour = observer(() => {
       }
       lastProcessedUtteranceId.current = event.utteranceId;
     }
-
   });
-
 
   Tts.addEventListener("tts-cancel", event => {
     console.log("tts-cancel", event)
@@ -135,25 +139,16 @@ const PageFour = observer(() => {
 
   const initTts = async () => {
     const voices = await Tts.voices();
-    // const availableVoices = voices
-    //   .filter(v => !v.networkConnectionRequired && !v.notInstalled)
-    //   .map(v => {
-    //     return { id: v.id, name: v.name, language: v.language };
-    //   });
-    // console.log('voices:', voices);
     if (voices && voices.length > 0) {
       try {
         await Tts.setDefaultLanguage(appStore.recordingLanguage);
       } catch (err) {
-        // My Samsung S9 has always this error: "Language is not supported"
-        Alert.alert("错误", "语音语言设置失败，请报告给开发者");
+        Modal.alert(t('errorTitle'), t('errorMessage'));
         console.log(`setDefaultLanguage error `, err);
       }
-      //await Tts.setDefaultVoice(voices[0].id);
       Tts.setIgnoreSilentSwitch("ignore");
       Tts.setDucking(true);
       Tts.setDefaultRate(0.5);
-
     }
   };
 
@@ -167,28 +162,27 @@ const PageFour = observer(() => {
     if (finalTranscription) {
       // 生成AI回答
       console.log('生成AI回答');
-      const answer = await generateResponse(appStore.position, finalTranscription);
+      const answer = await generateResponse(finalTranscription);
       if (answer) {
         console.log("AI回答:", answer);
         addNewQAPair(finalTranscription, answer, 1);
 
         // 将回答转换为语音
-        if (TTS_TYPE === 1){
-          console.log('将回答转换为语音');
-          const response = await openai.audio.speech.create({
-            model: "tts-1",
-            voice: appStore.language === "en" ? "nova" : "alloy",
-            input: answer,
-          });
-          const audioData = await response.arrayBuffer();
-          await playAudio(audioData);
-        }else{
+        // if (TTS_TYPE === 1){
+        //   console.log('将回答转换为语音');
+        //   const response = await openai.audio.speech.create({
+        //     model: "tts-1",
+        //     voice: appStore.language === "en" ? "nova" : "alloy",
+        //     input: answer,
+        //   });
+        //   const audioData = await response.arrayBuffer();
+        //   await playAudio(audioData);
+        // }else{
           await playTts(answer);
-        }
+        // }
 
       } else {
         console.error("无法生成回答");
-        Alert.alert("错误", "无法生成回答，请重试。");
         if (isInterviewingRef.current) {
           // isRecognizingRef.current = true;
           await handleStart();
@@ -198,6 +192,7 @@ const PageFour = observer(() => {
     setTranscription({ transcriptTally: "", transcript: "" });
   };
 
+  /**
   const playAudio = async (audioData: ArrayBuffer) => {
     console.log('开始播放音频');
     try {
@@ -233,7 +228,7 @@ const PageFour = observer(() => {
         await handleStart();
       }
     }
-  };
+  }; */
 
   const loadResumeContent = async () => {
     try {
@@ -252,21 +247,24 @@ const PageFour = observer(() => {
         throw new Error("无效的简历文件格式");
       }
 
-      // console.log("简历文件路径:", filePath);
-
       // 使用 await 等待文件内容读取完成
       const content = await FileSystem.readAsStringAsync(filePath);
       console.log("简历内容加载成功");
       return content; // 返回读取的内容
     } catch (error) {
       console.error("处理简历文件时出错:", error);
-      Alert.alert("错误", "无法处理简历文件");
+      Modal.alert("错误", "无法处理简历文件");
       return null; // 出错时返回 null
     }
   };
+
   useEffect(() => {
-    // 每当对话内容更新时，滚动到底部
-    scrollViewRef.current?.scrollToEnd({ animated: true });
+    // 每当 interviewContent 更新时，滚动到底部
+    if (scrollViewRef.current) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
   }, [interviewContent]);
 
   const handleStart = async () => {
@@ -287,9 +285,6 @@ const PageFour = observer(() => {
           persist: true,
         },
         androidIntentOptions: { EXTRA_LANGUAGE_MODEL: "web_search" }
-        // requiresOnDeviceRecognition: true,
-        // androidIntent:"android.speech.action.RECOGNIZE_SPEECH",
-        // iosTaskHint:"dictation",
       });
       console.log("语音识别已启动", isInterviewingRef.current);
     } catch (error) {
@@ -307,58 +302,31 @@ const PageFour = observer(() => {
     }
   };
 
-  const generateResponse = async (jobPositon: string, prompt: string) => {
-    const language = appStore.language;
-
+  const generateResponse = async (prompt: string) => {
+  
     try {
-      const resumeContent = await loadResumeContent();
-      if (!resumeContent) {
-        Alert.alert('提示', '无法加载简历内容', [
-          {text: '确定', onPress: () => {
-            appStore.resetState();
-            appStore.setCurrentStep(1);
-          }}
-        ]);
-        return;
+      console.log('generateResponse:', generateResponse);
+      console.log('interviewId:', interviewIdRef.current);
+      console.log('prompt:', prompt);
+      // 调用aiTrigger获取AI回答
+      const aiResponse = await appStore.aiTrigger(
+        interviewIdRef.current,
+        prompt,
+      );
+      console.log('aiResponse:', aiResponse);
+      if (!aiResponse.success) {
+        Modal.alert(t('errorTitle'), aiResponse.error);
+        return null;
       }
-      // console.log('resumeContent:', resumeContent?.length);
-      const msg = [
-        {
-          role: "system",
-          content: `You are a job candidate in an interview. Answer questions in ${language} based on the provided resume. Your responses should be concise, highlighting only the most relevant points. Be professional and specific, focusing on key achievements and skills.`,
-        },
-        {
-          role: "user",
-          content: `Job Position: ${jobPositon}\n\nResume content:\n\n${resumeContent}\n\nRemember this information for your responses.`,
-        },
-        {
-          role: "assistant",
-          content:
-            "Understood. I'm ready to provide concise, relevant answers based on the resume.",
-        },
-        {
-          role: "user",
-          content: `Interviewer's question: ${prompt}\nProvide a brief, focused answer highlighting key points.`,
-        },
-      ];
-      console.log('msg:', msg.length);
-      const response = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages: msg.map(m => ({
-          role: m.role as 'user' | 'assistant' | 'system',
-          content: m.content
-        })),
-        max_tokens: 300,
-      });
 
-
-      return response.choices[0].message.content;
+      return aiResponse.data.response;
     } catch (error) {
       console.error("Error generating response:", error);
       return null;
     }
   };
 
+  /**
   // 辅助函数：将 ArrayBuffer 转换为 Base64 字符串
   const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
     let binary = "";
@@ -368,28 +336,47 @@ const PageFour = observer(() => {
       binary += String.fromCharCode(bytes[i]);
     }
     return btoa(binary);
-  };
+  };**/
 
   const handleStartButtonPress = async () => {
     console.log("按钮被点击，当前状态:", isInterviewingRef.current);
     try {
       if (isInterviewingRef.current) {
         console.log("尝试结束面试");
+        // 通知服务器结束面试
+        const response = await appStore.endInterview();
+        if (!response.success) {
+          Modal.alert(t('errorTitle'), response.error);
+          return;
+        }
+        /////
+
         await handleStop();
-        
         appStore.resetState();
         appStore.setCurrentStep(1);
+        navigation.navigate('Main' as never);
       } else {
         console.log("尝试开始面试");
         updateIsInterviewing(true);
+        
+        // 通知服务器开始面试
+        const startInterviewResponse = await appStore.startInterview();
+        console.log('appStore.currentInterview:', startInterviewResponse);
+        if (!startInterviewResponse.success) {
+          Modal.alert(t('errorTitle'), startInterviewResponse.error);
+          return;
+        }
+        interviewIdRef.current = startInterviewResponse.data.interviewId;
+        /////
+        appStore.setIsFinished(false);
         initTts();
         await handleStart();
-        await addNewQAPair("开始面试...", "", 0);
+        await addNewQAPair(t('startInterviewText'), "", 0);
       }
     } catch (error) {
       console.error("处理按钮点击时出错:", error);
       await handleStop();
-      Alert.alert("错误", "处理面试状态时出现问题，请重试。");
+      Modal.alert(t('errorTitle'), t('errorHandlingInterviewState'));
     }
   };
 
@@ -407,93 +394,71 @@ const PageFour = observer(() => {
         `A：${answer}`
       ]);
     }
+  };
 
+  const handleMenuPress = () => {
+    console.log('Menu button pressed');
+    navigation.navigate('Main' as never);
+  };
+
+  const handleBackPress = () => {
+    appStore.setCurrentStep(3);
+    navigation.goBack();
   };
 
   const renderFooter = () => (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        isInterviewing && styles.activeButton,
-      ]}
+    <Button
+      type="primary"
       onPress={handleStartButtonPress}
+      style={[styles.button, isInterviewing && styles.activeButton]}
     >
-      <Text style={styles.buttonText}>
-        {isInterviewing ? "结束面试" : "开始面试"}
-      </Text>
-    </TouchableOpacity>
+      {isInterviewing ? t('endInterview') : t('startInterview')}
+    </Button>
   );
+
+  const { t } = useTranslation();
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Text style={styles.pageTitle}>开始面试辅助</Text>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
+      <Header title={t('startInterviewAssistant')} menuType={1} onMenuPress={handleMenuPress} isShowBackButton={true} onBackPress={handleBackPress} />
+      <StepIndicator />
+      <View style={styles.container}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
+        >
+          {interviewContent.length === 0 ? (
+            <Text style={styles.defaultText}>
+              {t('interviewPreparation')}
+            </Text>
+          ) : (
+            interviewContent.map((content, index) => (
+              <Text key={index} style={styles.dialogueText}>{content}</Text>
+            ))
+          )}
+        </ScrollView>
+      </View>
+      <Modal
+        transparent
+        visible={isLoading}
+        animationType="fade"
+        style={styles.modalContainer}
       >
-        {interviewContent.length === 0 ? (
-          <Text style={styles.defaultText}>
-            准备好以后点击开始按钮，AI助理将开始接收面试问题并给出语音和文字提示
-          </Text>
-        ) : (
-          interviewContent.map((content, index) => (
-            <Text key={index} style={styles.dialogueText}>{content}</Text>
-          ))
-        )}
-      </ScrollView>
+        <View style={styles.modalContent}>
+          <ActivityIndicator size="large"/>
+          <Text style={styles.loadingText}>{t('processingText')}</Text>
+        </View>
+      </Modal>
     </PageLayout>
   );
 });
 
 const styles = StyleSheet.create({
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  contentContainer: {
+  container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  button: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#4A90E2",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  activeButton: {
-    backgroundColor: "#FF4136",
-  },
-  instruction: {
-    fontSize: 16,
-    textAlign: "center",
-    marginTop: 20,
-  },
-  footer: {
-    width: "100%",
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    alignItems: "center",
-  },
-  startButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  startButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
+    justifyContent: 'flex-start',
+    paddingTop: 20,
   },
   scrollView: {
     flex: 1,
@@ -511,6 +476,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#666',
     marginTop: 20,
+  },
+  button: {
+    width: '100%',
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  activeButton: {
+    backgroundColor: '#FF4136',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
   },
 });
 

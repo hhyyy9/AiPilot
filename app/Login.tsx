@@ -2,10 +2,12 @@ import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { Input, Button, Modal, Text, ActivityIndicator } from '@ant-design/react-native';
-import { appStore } from './stores/AppStore';
 import { useNavigation } from '@react-navigation/native';
+import { appStore } from './stores/AppStore';
+import { useTranslation } from 'react-i18next';
 
 const Login = observer(() => {
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -14,20 +16,25 @@ const Login = observer(() => {
 
   const handleLogin = useCallback(async () => {
     if (!username || !password) {
-      Modal.alert('错误', '请输入用户名和密码');
+      Modal.alert(t('errorTitle'), t('emptyFieldsError'));
       return;
     }
 
     setIsLoading(true);
     try {
-      await appStore.login(username, password);
-      setIsLoading(false);
-      navigation.navigate('PageOne' as never)
+      const response = await appStore.login(username, password);
+      if (response.success == false) {
+        Modal.alert(t('errorTitle'), response.data.message);
+        return;
+      }
+      navigation.navigate('Main' as never)
     } catch (error) {
       setIsLoading(false);
-      Modal.alert('错误', '登录失败，请检查用户名和密码');
+      Modal.alert(t('errorTitle'), t('loginFailedError'));
+    }finally {
+      setIsLoading(false);
     }
-  }, [username, password, navigation]);
+  }, [username, password, navigation, t]);
 
   const handleNavigateToRegister = useCallback(() => {
     navigation.navigate('Register' as never);
@@ -36,7 +43,7 @@ const Login = observer(() => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>AiMaster</Text>
+        <Text style={styles.headerTitle}>{t('appName')}</Text>
       </View>
       <View style={styles.container}>
         <Image
@@ -46,7 +53,7 @@ const Login = observer(() => {
         />
         <View style={styles.inputContainer}>
           <Input
-            placeholder="邮箱地址"
+            placeholder={t('emailPlaceholder')}
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -54,7 +61,7 @@ const Login = observer(() => {
             style={styles.input}
           />
           <Input
-            placeholder="密码"
+            placeholder={t('passwordPlaceholder')}
             value={password}
             onChangeText={setPassword}
             type="password"
@@ -67,13 +74,13 @@ const Login = observer(() => {
           style={styles.buttonContainer}
           disabled={!!emailError}
         >
-          登录
+          {t('loginButton')}
         </Button>
         <Button
           onPress={handleNavigateToRegister}
           style={styles.registerButtonContainer}
         >
-          注册新账户
+          {t('registerButton')}
         </Button>
         <Modal
           transparent
@@ -83,7 +90,7 @@ const Login = observer(() => {
         >
             <View style={styles.modalContent}>
               <ActivityIndicator size="large"/>
-              <Text style={styles.loadingText}>登陆中...</Text>
+              <Text style={styles.loadingText}>{t('loadingText')}</Text>
             </View>
         </Modal>
       </View>

@@ -8,6 +8,7 @@ import StepIndicator from './components/StepIndicator';
 import { startRecording, stopRecording, playAudioFromPath, deleteAudioFile } from './utils/AudioHelper';
 import Header from './components/Header';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const PageTwo = observer(() => {
   const [isRecording, setIsRecording] = useState(false);
@@ -15,6 +16,7 @@ const PageTwo = observer(() => {
   const [recordedFilePath, setRecordedFilePath] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   const handleRecording = useCallback(async () => {
     if (isRecording) {
@@ -24,7 +26,7 @@ const PageTwo = observer(() => {
         setHasTestedMic(true);
       } catch (error) {
         console.error('停止录音错误:', error);
-        Modal.alert('录音错误', '无法停止录音，请重试。');
+        Modal.alert(t('errorTitle'), t('errorStoppingRecording'));
       }
     } else {
       setIsRecording(true);
@@ -33,7 +35,7 @@ const PageTwo = observer(() => {
         setRecordedFilePath(filePath);
       } catch (error) {
         console.error('开始录音错误:', error);
-        Modal.alert('录音错误', '无法开始录音，请重试。');
+        Modal.alert(t('errorTitle'), t('errorStartingRecording'));
         setIsRecording(false);
       }
     }
@@ -52,12 +54,12 @@ const PageTwo = observer(() => {
         }
       } catch (error) {
         console.error('播放录音时出错：', error);
-        Modal.alert('播放错误', '无法播放录音，请重试。');
+        Modal.alert(t('errorTitle'), t('errorPlayingRecording'));
       } finally {
         setIsLoading(false);
       }
     } else {
-      Modal.alert('提示', '没有可用的录音');
+      Modal.alert(t('errorTitle'), t('noAvailableRecording'));
     }
   }, [recordedFilePath]);
 
@@ -68,12 +70,13 @@ const PageTwo = observer(() => {
       navigation.navigate('PageThree' as never);
     } else {
       console.warn('尝试进入下一步，但麦克风未测试');
-      Modal.alert('提示', '请先测试录音设备');
+      Modal.alert(t('errorTitle'), t('errorTestingMic'));
     }
   }, [hasTestedMic]);
 
   const handleMenuPress = () => {
     console.log('Menu button pressed2');
+    navigation.navigate('Main' as never);
   };
 
   const handleBackPress = () => {
@@ -84,13 +87,13 @@ const PageTwo = observer(() => {
 
   const renderFooter = () => (
     <Button type="primary" onPress={handleNextStep}>
-      下一步
+      {t('nextStep')}
     </Button>
   );
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Header title="录音设备测试" onMenuPress={handleMenuPress} isShowBackButton={true} onBackPress={handleBackPress} />
+      <Header title={t('audioDeviceTest')} menuType={1} onMenuPress={handleMenuPress} isShowBackButton={true} onBackPress={handleBackPress} />
       <StepIndicator />
       <View style={styles.container}>
         <TouchableOpacity
@@ -101,12 +104,12 @@ const PageTwo = observer(() => {
           ]}
         >
           <Text style={styles.buttonText}>
-            {isRecording ? '停止录音' : '开始录音'}
+            {isRecording ? t('stopRecording') : t('startRecording')}
           </Text>
         </TouchableOpacity>
         {recordedFilePath && !isRecording && (
           <Button onPress={playRecording} style={styles.buttonContainer}>
-            播放录音
+            {t('playRecording')}
           </Button>
         )}
       </View>

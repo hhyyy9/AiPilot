@@ -7,8 +7,10 @@ import PageLayout from './components/PageLayout';
 import StepIndicator from './components/StepIndicator';
 import Header from './components/Header';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const PageThree = observer(() => {
+  const { t } = useTranslation();
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const scrollViewRef = useRef<ScrollView>(null);
   const navigation = useNavigation();
@@ -39,12 +41,13 @@ const PageThree = observer(() => {
       appStore.nextStep();
       navigation.navigate('PageFour' as never);
     } else {
-      Modal.alert('错误', '请选择一种语言');
+      Modal.alert(t('selectLanguageError'), t('selectLanguageErrorMessage'));
     }
   };
 
   const handleMenuPress = () => {
     console.log('Menu button pressed');
+    navigation.navigate('Main' as never);
   };
 
   const handleBackPress = () => {
@@ -54,13 +57,13 @@ const PageThree = observer(() => {
 
   const renderFooter = () => (
     <Button type="primary" onPress={handleNextStep}>
-      下一步
+      {t('nextStep')}
     </Button>
   );
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Header title="设置面试语言" onMenuPress={handleMenuPress} isShowBackButton={true} onBackPress={handleBackPress} />
+      <Header title={t('setInterviewLanguage')} menuType={1} onMenuPress={handleMenuPress} isShowBackButton={true} onBackPress={handleBackPress} />
       <StepIndicator />
       <View style={styles.container}>
         <ScrollView ref={scrollViewRef} style={styles.languageContainer}>

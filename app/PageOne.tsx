@@ -8,17 +8,17 @@ import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import PageLayout from './components/PageLayout';
 import StepIndicator from './components/StepIndicator';
-import { apiService } from './services/ApiService';
 import { useNavigation } from '@react-navigation/native';
 import Header from './components/Header';
-
-
+import { useTranslation } from 'react-i18next';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
 const PageOne = observer(() => {
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
+  const [postionTitle, setPostionTitle] = useState('');
+  const { t } = useTranslation();
 
   const pickDocument = async () => {
     try {
@@ -33,7 +33,7 @@ const PageOne = observer(() => {
         // 检查文件大小
         const fileInfo = await FileSystem.getInfoAsync(file.uri, { size: true });
         if ('size' in fileInfo && fileInfo.size > MAX_FILE_SIZE) {
-          Modal.alert("文件过大", `请选择小于 ${MAX_FILE_SIZE / (1024 * 1024)}MB 的文件。`);
+          Modal.alert(t('errorTitle'), t('fileSizeLimit'));
           return;
         }
 
@@ -45,33 +45,33 @@ const PageOne = observer(() => {
           name: file.name || 'document'
         } as any);
 
-        // 调用 ApiService 上传文件
-        const uploadResult = await apiService.uploadCV(formData);        
-        appStore.setResumeFile(uploadResult.data);
+        const uploadResult = await appStore.uploadCV(formData);        
+        // appStore.setResumeFile(uploadResult.data);
         console.log('完整的简历文件对象:', uploadResult);
       }
     } catch (error) {
       console.error('文件选择或上传错误:', error);
-      Modal.alert("错误", "选择或上传文件时发生错误。");
+      Modal.alert(t('errorTitle'), t('errorSelectingOrUploadingFile'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleNextStep = () => {
+    appStore.setPosition(postionTitle);
     console.log('appStore.position:', appStore.position);
     console.log('appStore.resumeFile:', appStore.resumeFile);
     if (appStore.position && appStore.resumeFile) {
       appStore.setCurrentStep(2);
       navigation.navigate('PageTwo' as never);
     } else {
-      Modal.alert('错误', '请填写职位并上传简历');
+      Modal.alert(t('errorTitle'), t('errorFillPositionAndResume'));
     }
   };
 
   const handleMenuPress = () => {
-    // 处理菜单按钮点击事件
     console.log('Menu button pressed1');
+    navigation.navigate('Main' as never);
   };
 
   const renderFooter = () => (
@@ -79,27 +79,27 @@ const PageOne = observer(() => {
     type="primary"
     onPress={handleNextStep}
   >
-    下一步
+    {t('nextStep')}
   </Button>
   );
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Header title="填写应聘信息" onMenuPress={handleMenuPress} isShowBackButton={false} onBackPress={() => {}} />
+      <Header title={t('fillApplicationInfo')} menuType={1} onMenuPress={handleMenuPress} isShowBackButton={false} onBackPress={() => {}} />
       <StepIndicator />
       <View style={styles.container}>
         <Input
-          placeholder="请输入面试职位"
-          value={appStore.position}
-          onChangeText={(text) => appStore.setPosition(text)}
+          placeholder={t('enterInterviewPosition')}
+          value={postionTitle}
+          onChangeText={(text) => setPostionTitle(text)}
           style={styles.input}
         />
         <Button onPress={pickDocument} style={styles.buttonContainer}>
-          {appStore.resumeFile ? '更新简历' : '上传简历'}
+          {appStore.resumeFile ? t('updateResume') : t('uploadResume')}
         </Button>
-        <Text style={styles.note}>注意：只支持上传 TXT/PDF/DOC/DOCX 文件</Text>
+        <Text style={styles.note}>{t('resumeUploadNote')}</Text>
         {appStore.resumeFile && (
-          <Text style={styles.fileName}>简历上传成功</Text>
+          <Text style={styles.fileName}>{t('resumeUploadSuccess')}</Text>
         )}
       </View>
       <Modal
@@ -110,7 +110,7 @@ const PageOne = observer(() => {
         >
             <View style={styles.modalContent}>
               <ActivityIndicator size="large"/>
-              <Text style={styles.loadingText}>上传中...</Text>
+              <Text style={styles.loadingText}>{t('uploading')}</Text>
             </View>
         </Modal>
     </PageLayout>
