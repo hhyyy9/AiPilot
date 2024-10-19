@@ -74,9 +74,8 @@ class ApiService {
     return this.request('POST', '/confirm-checkout-session', { sessionId });
   }
 
-  async uploadCV(file: File) {
-    const formData = new FormData();
-    formData.append('file', file);
+  async uploadCV(file: FormData) {
+    const formData = file;
     return this.request('POST', '/uploadCV', formData);
   }
 

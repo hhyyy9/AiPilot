@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useRouter, Link } from 'expo-router';
 import { apiService } from './services/ApiService';
-import { Button, Input, Text, Dialog, Image, useTheme } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { Input, Button, Modal, Text, ActivityIndicator } from '@ant-design/react-native';
 
 const Register = observer(() => {
   const [username, setUsername] = useState('');
@@ -12,7 +12,7 @@ const Register = observer(() => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const router = useRouter();
+  const navigation = useNavigation();
 
   const validateEmail = (email: string) => {
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -29,34 +29,35 @@ const Register = observer(() => {
 
   const handleRegister = useCallback(async () => {
     if (!username || !password || !confirmPassword) {
-      alert('请填写所有字段');
+      Modal.alert('错误', '请填写所有字段');
       return;
     }
 
     if (!validateEmail(username)) {
-      alert('请输入有效的邮箱地址');
+      Modal.alert('错误', '请输入有效的邮箱地址');
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('两次输入的密码不一致');
+      Modal.alert('错误', '两次输入的密码不一致');
       return;
     }
 
     setIsLoading(true);
     try {
       await apiService.register(username, password);
-      setIsLoading(false); // 在显示成功消息之前关闭加载对话框
-      alert('注册成功');
-      router.replace({ pathname: '/Login' });
+      setIsLoading(false);
+      Modal.alert('成功', '注册成功', [
+        { text: 'OK', onPress: () => navigation.navigate('Login' as never) }
+      ]);
     } catch (error) {
-      setIsLoading(false); // 确保在出错时也关闭加载对话框
-      alert('注册失败，请稍后重试:' + error);
+      setIsLoading(false);
+      Modal.alert('错误', '注册失败，请稍后重试:' + error);
     }
-  }, [username, password, confirmPassword, router]);
+  }, [username, password, confirmPassword, navigation]);
 
   const handleGoBack = () => {
-    router.back();
+    navigation.goBack();
   };
 
   return (
@@ -79,33 +80,42 @@ const Register = observer(() => {
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
-            keyboardType="email-address"
-            errorMessage={emailError}
-            errorStyle={styles.errorText}
-          />
+            type="text"
+            style={styles.input}          />
           <Input
             placeholder="密码"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            type="password"
+            style={styles.input}
           />
           <Input
             placeholder="确认密码"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            secureTextEntry
+            type="password"
+            style={styles.input}
           />
         </View>
         <Button
-          title="注册"
+          type="primary"
           onPress={handleRegister}
-          containerStyle={styles.buttonContainer}
+          style={styles.buttonContainer}
           disabled={!!emailError}
-        />
-        <Dialog isVisible={isLoading} overlayStyle={styles.dialogOverlay}>
-          <Dialog.Loading loadingProps={{ size: 'large', color: '#0000ff' }} />
-          <Text style={styles.loadingText}>注册中...</Text>
-        </Dialog>
+        >
+          注册
+        </Button>
+        <Modal
+          transparent
+          visible={isLoading}
+          animationType="fade"
+          style={styles.modalContainer}
+        >
+            <View style={styles.modalContent}>
+              <ActivityIndicator size="large"/>
+              <Text style={styles.loadingText}>注册中...</Text>
+            </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -135,15 +145,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 0, // 移除顶部内边距，因为 SafeAreaView 已经处理了这个问题
-  },
-  logo: {
-    width: 200,
-    height: 100,
-    marginBottom: 80, // 增加底部margin，与下面的内容留出更多空间
+    paddingTop: 40,
   },
   inputContainer: {
     width: '100%',
@@ -153,18 +158,39 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 10,
   },
-  dialogOverlay: {
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0)', // 半透明背景
+  },
+  modalContent: {
     backgroundColor: 'white',
-    borderRadius: 10,
     padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 5, // 用于 Android 的阴影
+    shadowColor: '#000', // 以下四行用于 iOS 的阴影
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    textAlign: 'center',
+    color: '#333',
   },
-  errorText: {
-    color: 'red',
+  logo: {
+    width: 200,
+    height: 100,
+    marginBottom: 40,
+  },
+  input: {
+    width: '100%',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
 });
 

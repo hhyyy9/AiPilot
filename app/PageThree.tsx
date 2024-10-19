@@ -1,17 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { observer } from 'mobx-react-lite';
+import { Button, Text, Modal } from '@ant-design/react-native';
 import { appStore, LANGUAGE_MAP } from './stores/AppStore';
 import PageLayout from './components/PageLayout';
+import StepIndicator from './components/StepIndicator';
+import Header from './components/Header';
+import { useNavigation } from '@react-navigation/native';
 
-
-
-const Page3 = observer(() => {
+const PageThree = observer(() => {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const scrollViewRef = useRef<ScrollView>(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    // 在组件加载后，滚动到英语选项的位置
     const scrollToEnglish = () => {
       const languageKeys = Object.keys(LANGUAGE_MAP);
       const englishIndex = languageKeys.indexOf('en');
@@ -20,81 +22,76 @@ const Page3 = observer(() => {
       }
     };
 
-    // 使用 setTimeout 确保在布局完成后执行滚动
     setTimeout(scrollToEnglish, 100);
   }, []);
 
   const handleLanguageSelect = (langCode: string) => {
-    console.log('handleLanguageSelect', langCode);
     setSelectedLanguage(langCode);
     appStore.setLanguage(LANGUAGE_MAP[langCode].name);
-    // 设置 recordingLanguage
     const selectedRecordingLanguageCode = LANGUAGE_MAP[langCode].code;
     appStore.setRecordingLanguage(selectedRecordingLanguageCode);
+    console.log('selectedLanguage:', appStore.language);
+    console.log('selectedRecordingLanguageCode:', appStore.recordingLanguage);
   };
 
   const handleNextStep = () => {
     if (selectedLanguage) {
       appStore.nextStep();
+      navigation.navigate('PageFour' as never);
     } else {
-      alert('请选择一种语言');
+      Modal.alert('错误', '请选择一种语言');
     }
+  };
+
+  const handleMenuPress = () => {
+    console.log('Menu button pressed');
+  };
+
+  const handleBackPress = () => {
+    appStore.setCurrentStep(2);
+    navigation.goBack();
   };
 
   const renderFooter = () => (
-    <TouchableOpacity style={styles.button} onPress={handleNextStep}>
-      <Text style={styles.buttonText}>下一步</Text>
-    </TouchableOpacity>
+    <Button type="primary" onPress={handleNextStep}>
+      下一步
+    </Button>
   );
-
-  const handleLanguageChange = () => {
-    const languageKeys = Object.keys(LANGUAGE_MAP);
-    const currentIndex = languageKeys.indexOf(appStore.language);
-    const englishIndex = languageKeys.indexOf('en');
-    
-    let nextIndex = (currentIndex + 1) % languageKeys.length;
-    if (nextIndex === englishIndex) {
-      nextIndex = (nextIndex + 1) % languageKeys.length;
-    }
-    
-    const nextLanguage = languageKeys[nextIndex];
-    appStore.setLanguage(nextLanguage);
-  };
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Text style={styles.pageTitle}>设置面试语言</Text>
-      <ScrollView ref={scrollViewRef} style={styles.languageContainer}>
-        {Object.entries(LANGUAGE_MAP).map(([code, { name, code: langCode }]) => (
-          <TouchableOpacity
-            key={code}
-            style={[
-              styles.languageButton,
-              selectedLanguage === code && styles.selectedLanguageButton
-            ]}
-            onPress={() => handleLanguageSelect(code)}
-          >
-            <Text style={[
-              styles.languageButtonText,
-              selectedLanguage === code && styles.selectedLanguageButtonText
-            ]}>
-              {`${name} (${langCode})`}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <Header title="设置面试语言" onMenuPress={handleMenuPress} isShowBackButton={true} onBackPress={handleBackPress} />
+      <StepIndicator />
+      <View style={styles.container}>
+        <ScrollView ref={scrollViewRef} style={styles.languageContainer}>
+          {Object.entries(LANGUAGE_MAP).map(([code, { name, code: langCode }]) => (
+            <TouchableOpacity
+              key={code}
+              style={[
+                styles.languageButton,
+                selectedLanguage === code && styles.selectedLanguageButton
+              ]}
+              onPress={() => handleLanguageSelect(code)}
+            >
+              <Text style={[
+                styles.languageButtonText,
+                selectedLanguage === code && styles.selectedLanguageButtonText
+              ]}>
+                {`${name} (${langCode})`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     </PageLayout>
   );
 });
 
 const styles = StyleSheet.create({
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'left',
-    alignSelf: 'flex-start',
-    width: '100%',
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 20,
   },
   languageContainer: {
     flex: 1,
@@ -115,31 +112,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4A90E2',
   },
-  button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#4A90E2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  settingLabel: {
-    fontSize: 16,
-    marginRight: 10,
-  },
-  settingValue: {
-    fontSize: 16,
-  },
 });
 
-export default Page3;
+export default PageThree;

@@ -1,20 +1,20 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useRouter } from 'expo-router';
-import { Button, Input, Text, Dialog, Image, useTheme } from '@rneui/themed';
-import { appStore } from './stores/AppStore'; // 确保这个路径是正确的
+import { Input, Button, Modal, Text, ActivityIndicator } from '@ant-design/react-native';
+import { appStore } from './stores/AppStore';
+import { useNavigation } from '@react-navigation/native';
 
 const Login = observer(() => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const router = useRouter();
+  const navigation = useNavigation();
 
   const handleLogin = useCallback(async () => {
     if (!username || !password) {
-      Alert.alert('错误', '请输入用户名和密码');
+      Modal.alert('错误', '请输入用户名和密码');
       return;
     }
 
@@ -22,24 +22,21 @@ const Login = observer(() => {
     try {
       await appStore.login(username, password);
       setIsLoading(false);
-      Alert.alert('成功', '登录成功', [
-        { text: 'OK', onPress: () => router.replace('/main') }
-      ]);
+      navigation.navigate('PageOne' as never)
     } catch (error) {
-      Alert.alert('错误', '登录失败，请检查用户名和密码');
+      setIsLoading(false);
+      Modal.alert('错误', '登录失败，请检查用户名和密码');
     }
-  }, [username, password, router]);
+  }, [username, password, navigation]);
 
   const handleNavigateToRegister = useCallback(() => {
-    router.push({
-      pathname: '/Register'
-    });
-  }, [router]);
+    navigation.navigate('Register' as never);
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>登录</Text>
+        <Text style={styles.headerTitle}>AiMaster</Text>
       </View>
       <View style={styles.container}>
         <Image
@@ -53,33 +50,42 @@ const Login = observer(() => {
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
-            keyboardType="email-address"
-            errorMessage={emailError}
-            errorStyle={styles.errorText}
+            type="text"
+            style={styles.input}
           />
           <Input
             placeholder="密码"
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
+            type="password"
+            style={styles.input}
           />
         </View>
         <Button
-          title="登录"
+          type="primary"
           onPress={handleLogin}
-          containerStyle={styles.buttonContainer}
+          style={styles.buttonContainer}
           disabled={!!emailError}
-        />
+        >
+          登录
+        </Button>
         <Button
-          title="注册新账户"
           onPress={handleNavigateToRegister}
-          containerStyle={styles.registerButtonContainer}
-          type="outline"
-        />
-        <Dialog isVisible={isLoading} overlayStyle={styles.dialogOverlay}>
-          <Dialog.Loading loadingProps={{ size: 'large', color: '#0000ff' }} />
-          <Text style={styles.loadingText}>登录中...</Text>
-        </Dialog>
+          style={styles.registerButtonContainer}
+        >
+          注册新账户
+        </Button>
+        <Modal
+          transparent
+          visible={isLoading}
+          animationType="fade"
+          style={styles.modalContainer}
+        >
+            <View style={styles.modalContent}>
+              <ActivityIndicator size="large"/>
+              <Text style={styles.loadingText}>登陆中...</Text>
+            </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -91,9 +97,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    height: 44,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    position: 'relative',
   },
   headerTitle: {
     fontSize: 17,
@@ -101,62 +109,14 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     padding: 20,
-  },
-  logo: {
-    width: 200,
-    height: 100,
-    marginBottom: 40,
+    paddingTop: 40,
   },
   inputContainer: {
     width: '100%',
     marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
-  button: {
-    width: '100%',
-    height: 40,
-    backgroundColor: '#4A90E2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  registerButton: {
-    width: '100%',
-    height: 40,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#4A90E2',
-  },
-  registerButtonText: {
-    color: '#4A90E2',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   buttonContainer: {
     width: '100%',
@@ -165,19 +125,41 @@ const styles = StyleSheet.create({
   registerButtonContainer: {
     width: '100%',
     marginTop: 10,
+    borderColor: '#108ee9',
   },
-  errorText: {
-    color: 'red',
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0)', // 半透明背景
   },
-  dialogOverlay: {
+  modalContent: {
     backgroundColor: 'white',
-    borderRadius: 10,
     padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 5, // 用于 Android 的阴影
+    shadowColor: '#000', // 以下四行用于 iOS 的阴影
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    textAlign: 'center',
+    color: '#333',
+  },
+  logo: {
+    width: 200,
+    height: 100,
+    marginBottom: 40,
+  },
+  input: {
+    width: '100%',
+    marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
 });
 

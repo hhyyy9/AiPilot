@@ -1,52 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { observer } from 'mobx-react-lite';
+import { Input, Button, Modal, Text, ActivityIndicator } from '@ant-design/react-native';
 import { appStore } from './stores/AppStore';
 import * as DocumentPicker from 'expo-document-picker';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import PageLayout from './components/PageLayout';
-import StepIndicator from './components/StepIndicator'; // 确保导入 StepIndicator
 import * as FileSystem from 'expo-file-system';
-import { Platform } from 'react-native';
-import { Alert } from 'react-native'; // Added import for Alert
-// 定义 ResumeFile 类型
-type ResumeFile = {
-  uri: string;
-  name: string;
-  mimeType: string;
-  savedName?: string;
-} | null;
+import { Ionicons } from '@expo/vector-icons';
+import PageLayout from './components/PageLayout';
+import StepIndicator from './components/StepIndicator';
+import { apiService } from './services/ApiService';
+import { useNavigation } from '@react-navigation/native';
+import Header from './components/Header';
+
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
-const Page1 = observer(() => {
-  const [position, setPosition] = useState('');
-  const [resumeFile, setResumeFile] = useState<ResumeFile>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    // 组件加载时从本地存储加载简历文件信息
-    loadResumeFile();
-  }, []);
-
-  const loadResumeFile = async () => {
-    try {
-      const savedResumeFile = await AsyncStorage.getItem('resumeFile');
-      if (savedResumeFile) {
-        setResumeFile(JSON.parse(savedResumeFile));
-      }else{
-        setResumeFile(null);
-      }
-    } catch (error) {
-      console.error('加载简历文件信息失败:', error);
-    }
-  };
+const PageOne = observer(() => {
+  const [isLoading, setIsLoading] = useState(false);
+  const navigation = useNavigation();
 
   const pickDocument = async () => {
     try {
+      setIsLoading(true);
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'text/plain',
+        type: ['text/plain', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
       });
 
       if (result.assets && result.assets.length > 0) {
@@ -55,152 +33,163 @@ const Page1 = observer(() => {
         // 检查文件大小
         const fileInfo = await FileSystem.getInfoAsync(file.uri, { size: true });
         if ('size' in fileInfo && fileInfo.size > MAX_FILE_SIZE) {
-          Alert.alert("文件过大", "请选择小于 ${MAX_FILE_SIZE / (1024 * 1024)}MB 的文件。");
+          Modal.alert("文件过大", `请选择小于 ${MAX_FILE_SIZE / (1024 * 1024)}MB 的文件。`);
           return;
         }
 
-        const currentDate = new Date();
-        const dateSuffix = `_${currentDate.getFullYear()}${(currentDate.getMonth() + 1).toString().padStart(2, '0')}${currentDate.getDate().toString().padStart(2, '0')}`;
-        const savedName = `${file.name.split('.').slice(0, -1).join('.')}${dateSuffix}.txt`;
-        
-        let newUri;
-        if (Platform.OS === 'web') {
-          newUri = file.uri; // Web 平台直接使用原始 URI
-        } else {
-          newUri = FileSystem.documentDirectory + savedName;
-          await FileSystem.copyAsync({
-            from: file.uri,
-            to: newUri
-          });
-        }
+        // 创建一个 FormData 对象来上传文件
+        const formData = new FormData();
+        formData.append('file', {
+          uri: file.uri,
+          type: file.mimeType || 'application/octet-stream',
+          name: file.name || 'document'
+        } as any);
 
-        const newResumeFile = {
-          uri: newUri,
-          name: file.name,
-          mimeType: 'text/plain',
-          savedName: savedName,
-        };
-
-        setResumeFile(newResumeFile);
-        await AsyncStorage.setItem('resumeFile', JSON.stringify(newResumeFile));
-        appStore.setResumeFile(newResumeFile);
-
-        console.log('存储的简历文件路径:', newUri);
-        console.log('完整的简历文件对象:', newResumeFile);
+        // 调用 ApiService 上传文件
+        const uploadResult = await apiService.uploadCV(formData);        
+        appStore.setResumeFile(uploadResult.data);
+        console.log('完整的简历文件对象:', uploadResult);
       }
     } catch (error) {
-      console.error('文件选择错误:', error);
-      Alert.alert("错误", "选择文件时发生错误。");
+      console.error('文件选择或上传错误:', error);
+      Modal.alert("错误", "选择或上传文件时发生错误。");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleNextStep = () => {
-    console.log('handleNextStep called');
-    console.log('Current position:', position);
-    console.log('Current resumeFile:', resumeFile);
-
-    if (position && resumeFile) {
-      console.log('Conditions met, proceeding to next step');
-      appStore.setPosition(position);
-      appStore.setResumeFile(resumeFile);
-      appStore.nextStep();
-      console.log('Current step after nextStep:', appStore.currentStep);
-      
+    console.log('appStore.position:', appStore.position);
+    console.log('appStore.resumeFile:', appStore.resumeFile);
+    if (appStore.position && appStore.resumeFile) {
+      appStore.setCurrentStep(2);
+      navigation.navigate('PageTwo' as never);
     } else {
-      console.log('Conditions not met');
-      alert('请填写职位并上传简历');
+      Modal.alert('错误', '请填写职位并上传简历');
     }
   };
 
+  const handleMenuPress = () => {
+    // 处理菜单按钮点击事件
+    console.log('Menu button pressed1');
+  };
+
   const renderFooter = () => (
-    <TouchableOpacity style={styles.button} onPress={handleNextStep}>
-      <Text style={styles.buttonText}>下一步</Text>
-    </TouchableOpacity>
+    <Button
+    type="primary"
+    onPress={handleNextStep}
+  >
+    下一步
+  </Button>
   );
 
   return (
     <PageLayout footer={renderFooter()}>
-      <Text style={styles.title}>填写应聘的职位信息</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="请输入面试职位"
-        value={position}
-        onChangeText={setPosition}
-      />
-      <TouchableOpacity style={styles.button} onPress={pickDocument}>
-        <Text style={styles.buttonText}>
-          {resumeFile ? '更新简历' : '上传简历 (仅支持 TXT 文件)'}
-        </Text>
-      </TouchableOpacity>
-      {resumeFile && (
-        <Text style={styles.fileName}>已选择文件: {resumeFile.savedName || resumeFile.name}</Text>
-      )}
-      <Text style={styles.note}>注意：只支持上传 TXT 文本文件</Text>
+      <Header title="填写应聘信息" onMenuPress={handleMenuPress} isShowBackButton={false} onBackPress={() => {}} />
+      <StepIndicator />
+      <View style={styles.container}>
+        <Input
+          placeholder="请输入面试职位"
+          value={appStore.position}
+          onChangeText={(text) => appStore.setPosition(text)}
+          style={styles.input}
+        />
+        <Button onPress={pickDocument} style={styles.buttonContainer}>
+          {appStore.resumeFile ? '更新简历' : '上传简历'}
+        </Button>
+        <Text style={styles.note}>注意：只支持上传 TXT/PDF/DOC/DOCX 文件</Text>
+        {appStore.resumeFile && (
+          <Text style={styles.fileName}>简历上传成功</Text>
+        )}
+      </View>
+      <Modal
+          transparent
+          visible={isLoading}
+          animationType="fade"
+          style={styles.modalContainer}
+        >
+            <View style={styles.modalContent}>
+              <ActivityIndicator size="large"/>
+              <Text style={styles.loadingText}>上传中...</Text>
+            </View>
+        </Modal>
     </PageLayout>
   );
 });
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    position: 'relative',    
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  menuButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#F0F0F0',
-  },
-  stepIndicator: {
-    marginBottom: 20,
-  },
-  stepCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#4A90E2',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepNumber: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    justifyContent: 'flex-start',
+    // alignItems: 'center',
+    paddingTop: 40,
   },
   input: {
     width: '100%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    paddingHorizontal: 10,
     marginBottom: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
-  button: {
+  buttonContainer: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#4A90E2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginTop: 10,
+    backgroundColor: '#94c5fc',
   },
   fileName: {
-    marginTop: 10,
+    marginTop: 20,
     fontSize: 16,
+    color: 'green',
+    textAlign: 'center',
   },
   note: {
     fontSize: 14,
     color: '#666',
     marginBottom: 10,
+    paddingTop: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0)', // 半透明背景
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    elevation: 5, // 用于 Android 的阴影
+    shadowColor: '#000', // 以下四行用于 iOS 的阴影
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
   },
 });
 
-export default Page1;
+export default PageOne;

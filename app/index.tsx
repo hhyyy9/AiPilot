@@ -1,3 +1,4 @@
-import LoginPage from './Login';
+import { registerRootComponent } from 'expo';
+import App from './_layout';
 
-export default LoginPage;
+registerRootComponent(App);

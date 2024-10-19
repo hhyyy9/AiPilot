@@ -4,13 +4,10 @@ import { observer } from 'mobx-react-lite';
 import { appStore } from '../stores/AppStore';
 
 const StepIndicator = observer(() => {
-  const steps = [1, 2, 3, 4]; // 改为只有4个步骤
+  const steps = [1, 2, 3, 4];
 
   const handleStepPress = (step: number) => {
     return;
-    if (step <= appStore.currentStep) {
-      appStore.setCurrentStep(step);
-    }
   };
 
   return (
@@ -40,8 +37,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#f0f0f0',
+    paddingVertical: 20,
+    backgroundColor: '#ffffff',
   },
   step: {
     width: 30,

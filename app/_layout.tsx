@@ -1,22 +1,29 @@
-import { Stack } from "expo-router";
-import { ThemeProvider } from '@rneui/themed';
-import { useColorScheme } from 'react-native';
-import { theme } from './createTheme';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Provider } from '@ant-design/react-native';
+import Register from "./Register";
+import Login from "./Login";
+import PageOne from "./PageOne";
+import PageTwo from "./PageTwo";
+import PageThree from "./PageThree";
+import PageFour from "./PageFour";
 
-export const App = () => {
-  // 使用 useColorScheme 钩子来获取系统的颜色方案
-  const colorScheme = useColorScheme();
-  
-  // 根据系统颜色方案设置主题模式
-  theme.mode = colorScheme || 'light';
+const Stack = createNativeStackNavigator();
 
+export default function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="Register" />
-        <Stack.Screen name="main" />
-      </Stack>
-    </ThemeProvider>
+    <Provider>
+      <NavigationContainer independent={true}>
+        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="Register" component={Register} />
+          <Stack.Screen name="PageOne" component={PageOne} />
+          <Stack.Screen name="PageTwo" component={PageTwo} />
+          <Stack.Screen name="PageThree" component={PageThree} />
+          <Stack.Screen name="PageFour" component={PageFour} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </Provider>
   );
-};
+}

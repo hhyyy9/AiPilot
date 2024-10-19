@@ -9,7 +9,9 @@ type PageLayoutProps = {
 const PageLayout: React.FC<PageLayoutProps> = ({ children, footer }) => {
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>{children}</View>
+      <View style={styles.content}>
+        {children}
+      </View>
       <View style={styles.footer}>{footer}</View>
     </SafeAreaView>
   );

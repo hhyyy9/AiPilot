@@ -176,7 +176,7 @@ class AppStore {
     }
   }
 
-  async uploadCV(file: File) {
+  async uploadCV(file: FormData) {
     try {
       const response = await apiService.uploadCV(file);
       return response.data;

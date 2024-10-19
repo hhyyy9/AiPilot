@@ -33,7 +33,7 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-const Page4 = observer(() => {
+const PageFour = observer(() => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [interviewContent, setInterviewContent] = useState<string[]>([]);
   const [isInterviewing, setIsInterviewing] = useState(false);
@@ -264,7 +264,6 @@ const Page4 = observer(() => {
       return null; // 出错时返回 null
     }
   };
-
   useEffect(() => {
     // 每当对话内容更新时，滚动到底部
     scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -515,4 +514,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Page4;
+export default PageFour;
