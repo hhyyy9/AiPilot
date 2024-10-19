@@ -132,6 +132,7 @@ class AppStore {
       const headers = {
         ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
         ...customHeaders,
+        'Accept-Language': 'en',
       };
       const response = await axios({
         method,
