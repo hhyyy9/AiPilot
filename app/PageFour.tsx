@@ -28,15 +28,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { use } from "i18next";
 
-// const OPENAI_API_KEY =
-//   "xxx";
 
 const TTS_TYPE:Number = 0; //0=buildin, 1=openai
-
-// const openai = new OpenAI({
-//   apiKey: OPENAI_API_KEY,
-//   dangerouslyAllowBrowser: true,
-// });
 
 const PageFour = observer(() => {
   const scrollViewRef = useRef<ScrollView>(null);
@@ -45,8 +38,9 @@ const PageFour = observer(() => {
   const isInterviewingRef = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
-  // const [interviewId, setInterviewId] = useState<string>("");
   const interviewIdRef = useRef<string>("");
+
+  const isPausuedRef = useRef(false);
 
   useKeepAwake();
 
@@ -413,14 +407,34 @@ const PageFour = observer(() => {
     navigation.goBack();
   };
 
+  const handlePauseButtonPress = () => {
+    isPausuedRef.current = !isPausuedRef.current;
+    if (isPausuedRef.current) {
+      handleStop();
+    } else {
+      handleStart();
+    }
+  };
+
   const renderFooter = () => (
-    <Button
-      type="primary"
-      onPress={handleStartButtonPress}
-      style={[styles.button, isInterviewing && styles.activeButton]}
-    >
-      {isInterviewing ? t('endInterview') : t('startInterview')}
-    </Button>
+    <>
+      <View style={styles.buttonContainer}>
+        <Button 
+          type="ghost" 
+          onPress={handlePauseButtonPress} 
+          style={styles.pauseButton}
+        >
+          {isPausuedRef.current ? t('resumeInterview') : t('pauseInterview')}
+        </Button>
+        <Button
+          type="primary"
+          onPress={handleStartButtonPress}
+          style={[styles.button, isInterviewing && styles.activeButton]}
+        >
+          {isInterviewing ? t('endInterview') : t('startInterview')}
+        </Button>
+      </View>
+    </>
   );
 
   const { t } = useTranslation();
@@ -515,6 +529,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#333',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 10,
+  },
+  pauseButton: {
+    flex: 1,
+    marginRight: 10, // 添加右边距以保持间隔
   },
 });
 

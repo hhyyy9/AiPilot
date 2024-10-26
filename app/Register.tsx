@@ -95,6 +95,7 @@ const Register = observer(() => {
             onChangeText={setPassword}
             type="password"
             style={styles.input}
+            textContentType='oneTimeCode'
           />
           <Input
             placeholder={t('confirmPassword')}
@@ -102,6 +103,7 @@ const Register = observer(() => {
             onChangeText={setConfirmPassword}
             type="password"
             style={styles.input}
+            textContentType='oneTimeCode'
           />
         </View>
         <Button

@@ -5,8 +5,8 @@ import axios from 'axios';
 // console.log('当前环境:', isDevelopment ? '开发环境' : '生产环境');
 // let BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
 // if (!isDevelopment) {
-// const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
-const BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+// const BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
 // }
 
 export const LANGUAGE_MAP: { [key: string]: { name: string, code: string } } = {
@@ -265,7 +265,7 @@ class AppStore {
       const response = await this.request('POST', '/refreshToken', {}, {
         'x-refresh-token': this.refreshToken
       });
-      console.log('refreshNewToken2:', response);
+      // console.log('refreshNewToken2:', response);
       if (response.data.accessToken && response.data.refreshToken) {
         this.setToken(response.data.accessToken);
         this.setRefreshToken(response.data.refreshToken);
