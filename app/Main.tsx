@@ -106,6 +106,7 @@ const Main = observer(() => {
   }, []);
 
   const renderInterviewItem = ({ item, index }: { item: Interview; index: number }) => (
+    console.log('renderInterviewItem:', item),
     <Card key={`interview-${item.id || index}`} style={styles.interviewCard}>
       <Card.Header
         title={

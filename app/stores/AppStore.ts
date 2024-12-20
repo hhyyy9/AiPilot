@@ -3,10 +3,9 @@ import axios from 'axios';
 
 // const isDevelopment = process.env.NODE_ENV === 'development';
 // console.log('当前环境:', isDevelopment ? '开发环境' : '生产环境');
-// let BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
+const BASE_URL : string = "http://192.168.1.120:7071/api/v1";
 // if (!isDevelopment) {
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
-// const BASE_URL : string | undefined = "http://192.168.0.114:7071/api/v1";
+// const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 // }
 
 export const LANGUAGE_MAP: { [key: string]: { name: string, code: string } } = {
@@ -143,6 +142,7 @@ class AppStore {
       });
       return response.data;
     } catch (error) {
+      console.error('request error:', error);
       return error;
     }
   }

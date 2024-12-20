@@ -6,6 +6,7 @@ import {
   Alert,
   ScrollView,
   View,
+  Platform,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { Button, Modal, ActivityIndicator } from '@ant-design/react-native';
@@ -13,7 +14,7 @@ import { appStore } from "./stores/AppStore";
 import PageLayout from "./components/PageLayout";
 import Header from "./components/Header";
 import StepIndicator from "./components/StepIndicator";
-import { Audio } from "expo-av";
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import { useKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
 import {
@@ -139,13 +140,13 @@ const PageFour = observer(() => {
     if (voices && voices.length > 0) {
       try {
         await Tts.setDefaultLanguage(appStore.recordingLanguage);
+        await Tts.setIgnoreSilentSwitch("ignore");    // 忽略静音开关
+        await Tts.setDucking(false);                  // 不降低其他应用的音量
+        await Tts.setDefaultRate(0.5);
       } catch (err) {
         Modal.alert(t('errorTitle'), t('errorMessage'));
         console.log(`setDefaultLanguage error `, err);
       }
-      Tts.setIgnoreSilentSwitch("ignore");
-      Tts.setDucking(true);
-      Tts.setDefaultRate(0.5);
     }
   };
 
@@ -419,13 +420,13 @@ const PageFour = observer(() => {
   const renderFooter = () => (
     <>
       <View style={styles.buttonContainer}>
-        <Button 
+        {/* <Button 
           type="ghost" 
           onPress={handlePauseButtonPress} 
           style={styles.pauseButton}
         >
           {isPausuedRef.current ? t('resumeInterview') : t('pauseInterview')}
-        </Button>
+        </Button> */}
         <Button
           type="primary"
           onPress={handleStartButtonPress}
@@ -438,6 +439,27 @@ const PageFour = observer(() => {
   );
 
   const { t } = useTranslation();
+
+  // 添加音频会话配置
+  useEffect(() => {
+    const configureAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,        // 允许在静音模式下播放
+          staysActiveInBackground: true,      // 保持后台活动
+          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+          interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+          shouldDuckAndroid: false,           // 其他应用播放声音时不降低音量
+          playThroughEarpieceAndroid: false   // 使用扬声器而不是听筒
+        });
+      } catch (error) {
+        console.error('配置音频模式失败:', error);
+      }
+    };
+
+    configureAudio();
+  }, []);
 
   return (
     <PageLayout footer={renderFooter()}>
