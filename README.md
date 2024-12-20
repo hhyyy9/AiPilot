@@ -78,15 +78,15 @@ The platform combines the power of mobile accessibility with Azure's advanced AI
 ## Screenshots
 | ![Screen 1](screenshots/screen-shot-1.png) | ![Screen 2](screenshots/screen-shot-2.png) | ![Screen 3](screenshots/screen-shot-3.png) |
 |:---:|:---:|:---:|
-| Home Screen | Code Generation | Voice Commands |
+| Home Screen | Interview history | Upload resume |
 
 | ![Screen 4](screenshots/screen-shot-4.png) | ![Screen 5](screenshots/screen-shot-5.png) | ![Screen 6](screenshots/screen-shot-6.png) |
 |:---:|:---:|:---:|
-| Code Suggestions | Multi-language Support | Settings |
+| Speech Testing | Language selection | Start a interview |
 
 | ![Screen 7](screenshots/screen-shot-7.png) |
 |:---:|
-| Project Overview |
+| Ai Pilot |
 
 ## Prerequisites
 - Node.js (v18.0.0 or higher)
