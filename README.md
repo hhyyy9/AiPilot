@@ -1,97 +1,154 @@
-# Welcome to your Expo app 👋
+# AiPilot
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Description
+AiPilot is a modern mobile application serving as the frontend component of the AiPilot platform. This React Native application works in conjunction with [AiPilot-AF](https://github.com/hhyyy9/AiPilot-AF), our Azure Functions-based backend, to provide an intelligent development assistant platform.
 
-## Get started
+The platform combines the power of mobile accessibility with Azure's advanced AI and cloud services to deliver intelligent coding assistance and automated development workflows.
 
-1. Install dependencies
+## Technology Stack
+### Framework & Platform
+- React Native (v0.74.5)
+- Expo (v51.0.34)
+- React (v18.2.0)
 
-   ```bash
-   npm install
-   ```
+### Navigation & Routing
+- Expo Router
+- React Navigation (v6.1.18)
 
-2. Start the app
+### State Management
+- MobX (v6.13.3)
+- MobX React Lite (v4.0.7)
 
-   ```bash
-    npx expo start
-   ```
+### UI Components & Design
+- Ant Design React Native (v5.2.3)
+- Expo Vector Icons
 
-In the output, you'll find options to open the app in a
+### API & Network
+- Axios (v1.7.7)
+- OpenAI SDK (v4.65.0)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Storage & Data
+- AsyncStorage
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Internationalization
+- i18next (v23.16.0)
+- react-i18next (v15.0.3)
 
-## Get a fresh project
+### Development & Build Tools
+- TypeScript
+- Babel
+- Jest (testing)
+- Expo Dev Client
 
-When you're ready, run:
+### Native Features
+- expo-av (Audio/Video)
+- expo-document-picker
+- expo-speech-recognition (Voice Recognition)
+- react-native-tts (Text-to-Speech)
+- expo-splash-screen
+- expo-status-bar
+- expo-web-browser
 
+### Platform Support
+- iOS
+- Android
+
+## Features
+- 🎯 Intelligent Development Assistant
+  - Code generation and completion
+  - Natural language code conversion
+  - Voice-to-code functionality
+  - Real-time code suggestions
+
+- 📱 Cross-Platform Support
+  - iOS and Android native apps
+  - Web application support
+  - Responsive design
+
+- 🌍 Global Accessibility
+  - Multi-language interface
+  - Internationalization support
+  - Voice command recognition
+
+- 🔄 Seamless Integration
+  - Connected to Azure backend services
+  - Real-time synchronization
+  - Secure authentication
+
+## Screenshots
+| ![Screen 1](screenshots/screen-shot-1.png) | ![Screen 2](screenshots/screen-shot-2.png) | ![Screen 3](screenshots/screen-shot-3.png) |
+|:---:|:---:|:---:|
+| Home Screen | Code Generation | Voice Commands |
+
+| ![Screen 4](screenshots/screen-shot-4.png) | ![Screen 5](screenshots/screen-shot-5.png) | ![Screen 6](screenshots/screen-shot-6.png) |
+|:---:|:---:|:---:|
+| Code Suggestions | Multi-language Support | Settings |
+
+| ![Screen 7](screenshots/screen-shot-7.png) |
+|:---:|
+| Project Overview |
+
+## Prerequisites
+- Node.js (v18.0.0 or higher)
+- npm or yarn
+- Expo CLI
+- iOS Simulator (for iOS development)
+- Android Studio (for Android development)
+
+## Installation
 ```bash
-npm run reset-project
+# Clone the repository
+git clone https://github.com/hhyyy9/AiPilot.git
+
+# Navigate to project directory
+cd AiPilot
+
+# Install dependencies
+npm install
+# or
+yarn install
+
+# Start the development server
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Environment Setup
+Create a `.env` file in the root directory:
+```env
+API_BASE_URL=your_backend_api_url
+AUTH_CLIENT_ID=your_auth_client_id
+```
 
-## Learn more
+## Project Structure
+```
+AiPilot/
+├── app/                  # Main application screens
+├── assets/              # Static assets
+├── components/          # Reusable components
+├── constants/           # Constants and configuration
+├── hooks/              # Custom React hooks
+├── navigation/         # Navigation configuration
+├── services/          # API and backend services
+├── store/             # MobX stores
+├── types/             # TypeScript type definitions
+└── utils/             # Utility functions
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Related Projects
+- [AiPilot-AF](https://github.com/hhyyy9/AiPilot-AF) - Azure Functions backend providing AI and cloud services
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Contributing
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Join the community
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-
-
-
-/Users/jackyhuang/Projects/WebProjects/AiPilot/node_modules/react-native-screens/RNScreens.podspec 
-  # s.project_header_files = "cpp/**/*.h" # Don't expose C++ headers publicly to allow importing framework into Swift files
-  s.private_header_files = "cpp/**/*.h"
-
-/Users/jackyhuang/Projects/WebProjects/AiPilot/node_modules/react-native/ReactCommon/yoga/Yoga.podspec
-  #spec.version = '0.0.0'
-  spec.version = '1.40.0'
-
-/Users/jackyhuang/Projects/WebProjects/AiPilot/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec
-  ss.visionos.vendored_frameworks = "destroot/Library/Frameworks/universal/hermes.xcframework"
-  #ss.visionos.vendored_frameworks = "destroot/Library/Frameworks/universal/hermes.xcframework"
-
-
-
-https://docs.expo.dev/develop/development-builds/create-a-build/
-
-https://github.com/jamsch/expo-speech-recognition?tab=readme-ov-file
-
-
-eas build --profile development --platform android
-
-
-
-npx expo-cli clean
-
-rm -rf node_modules
-npm install
-
-cd ios
-pod deintegrate
-pod install
-cd ..
-
-npx expo run:ios
-
-
-cd android
-./gradlew clean
-cd ..
-
-
-npx expo run:android
-
-npx expo-doctor
+## Acknowledgments
+- Microsoft Azure Cloud Services
+- OpenAI for AI capabilities
+- Expo and React Native communities
+- Contributors and supporters of the project
