@@ -62,7 +62,6 @@ The platform combines the power of mobile accessibility with Azure's advanced AI
 
 - 📱 Cross-Platform Support
   - iOS and Android native apps
-  - Web application support
   - Responsive design
 
 - 🌍 Global Accessibility
