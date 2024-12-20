@@ -2,11 +2,8 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
   Text,
   StyleSheet,
-  TouchableOpacity,
-  Alert,
   ScrollView,
   View,
-  Platform,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { Button, Modal, ActivityIndicator } from '@ant-design/react-native';
@@ -15,8 +12,7 @@ import PageLayout from "./components/PageLayout";
 import Header from "./components/Header";
 import StepIndicator from "./components/StepIndicator";
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from "expo-av";
-import * as FileSystem from "expo-file-system";
-import { useKeepAwake, deactivateKeepAwake } from 'expo-keep-awake';
+import { useKeepAwake } from 'expo-keep-awake';
 import {
   ExpoSpeechRecognitionModule,
   useSpeechRecognitionEvent,
@@ -27,7 +23,6 @@ import {
 import Tts from 'react-native-tts';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { use } from "i18next";
 
 
 const TTS_TYPE:Number = 0; //0=buildin, 1=openai
@@ -142,7 +137,12 @@ const PageFour = observer(() => {
         await Tts.setDefaultLanguage(appStore.recordingLanguage);
         await Tts.setIgnoreSilentSwitch("ignore");    // 忽略静音开关
         await Tts.setDucking(false);                  // 不降低其他应用的音量
-        await Tts.setDefaultRate(0.5);
+        console.log('appStore.recordingLanguage:', appStore.recordingLanguage);
+        if (appStore.recordingLanguage === "en-US") {
+          await Tts.setDefaultRate(0.4);
+        }else{
+          await Tts.setDefaultRate(0.5);
+        }
       } catch (err) {
         Modal.alert(t('errorTitle'), t('errorMessage'));
         console.log(`setDefaultLanguage error `, err);
