@@ -3,7 +3,7 @@
 ## Description
 AiPilot is a modern mobile application serving as the frontend component of the AiPilot platform. This React Native application works in conjunction with [AiPilot-AF](https://github.com/hhyyy9/AiPilot-AF), our Azure Functions-based backend, to provide an intelligent development assistant platform.
 
-The platform combines the power of mobile accessibility with Azure's advanced AI and cloud services to deliver intelligent coding assistance and automated development workflows.
+The platform combines the power of mobile accessibility with Azure's advanced AI and cloud services to deliver intelligent interview assistance.
 
 The application features a real-time voice assistance system for interviews, allowing users to wear headphones and receive instant AI-powered responses during interview sessions. This voice-guided interview support system helps users maintain natural conversation flow while receiving intelligent suggestions and guidance through audio feedback.
 
